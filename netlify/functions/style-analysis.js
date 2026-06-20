@@ -1,7 +1,7 @@
 // netlify/functions/style-analysis.js
 //
-// Calls Claude (Anthropic API) with the uploaded image and returns
-// structured styling feedback. Requires ANTHROPIC_API_KEY set in
+// Calls Google Gemini (free tier) with the uploaded image and returns
+// structured styling feedback. Requires GEMINI_API_KEY set in
 // Netlify environment variables (Site settings > Environment variables).
 
 const SYSTEM_PROMPT = `You are FitCheck, a sharp, friendly Lagos street-style stylist working under Olawale.
@@ -29,11 +29,11 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method not allowed" };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Server not configured: missing ANTHROPIC_API_KEY" }),
+      body: JSON.stringify({ error: "Server not configured: missing GEMINI_API_KEY" }),
     };
   }
 
@@ -59,57 +59,50 @@ exports.handler = async (event) => {
     }[occasion] || "everyday wear";
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 600,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: mediaType,
-                  data: image,
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { inline_data: { mime_type: mediaType, data: image } },
+                {
+                  text: `${SYSTEM_PROMPT}\n\nRead this fit. The occasion is: ${occasionLabel}. Respond with the JSON shape only.`,
                 },
-              },
-              {
-                type: "text",
-                text: `Read this fit. The occasion is: ${occasionLabel}. Respond with the JSON shape only.`,
-              },
-            ],
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 600,
+            responseMimeType: "application/json",
           },
-        ],
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic API error:", errText);
+      console.error("Gemini API error:", errText);
       return { statusCode: 502, body: JSON.stringify({ error: "Styling analysis failed" }) };
     }
 
     const data = await response.json();
-    const textBlock = (data.content || []).find((b) => b.type === "text");
+    const textBlock = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!textBlock) {
+      console.error("Unexpected Gemini response shape:", JSON.stringify(data));
       return { statusCode: 502, body: JSON.stringify({ error: "No response from styling engine" }) };
     }
 
     let parsed;
     try {
-      const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+      const cleaned = textBlock.replace(/```json|```/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Failed to parse model JSON:", textBlock.text);
+      console.error("Failed to parse model JSON:", textBlock);
       return { statusCode: 502, body: JSON.stringify({ error: "Couldn't parse styling result" }) };
     }
 
