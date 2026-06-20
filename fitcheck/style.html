@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style My Fit — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="style.html" class="active">Style My Fit</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:64px 0 48px;">
+  <div class="wrap">
+    <span class="tag" style="color:var(--lime)">// upload &amp; style</span>
+    <h1 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem);">What's the <span class="accent">fit</span> today?</h1>
+    <p class="lede">Upload a clear photo — full outfit or a single piece. We'll read it and tell you straight.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:48px;">
+  <div class="tool-shell">
+
+    <div class="tool-pane">
+      <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Upload a photo of your outfit">
+        <div id="uploadDefault">
+          <div class="upload-icon">📷</div>
+          <strong>Drop a photo or tap to upload</strong>
+          <span class="tag">JPG or PNG · one fit at a time</span>
+        </div>
+        <div id="uploadPreviewWrap" style="display:none;">
+          <div class="preview-polaroid">
+            <img id="previewImg" src="" alt="Your uploaded fit">
+            <span class="cap" id="previewCap">developing...</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+
+      <div class="occasion-select">
+        <label>What's it for?</label>
+        <div class="chip-row" id="occasionChips">
+          <div class="chip active" data-val="everyday">Everyday</div>
+          <div class="chip" data-val="date">Date night</div>
+          <div class="chip" data-val="owambe">Owambe / event</div>
+          <div class="chip" data-val="interview">Interview / work</div>
+          <div class="chip" data-val="fire">Just want it to go hard</div>
+        </div>
+      </div>
+
+      <button class="btn btn-solid" id="analyzeBtn" style="width:100%;margin-top:28px;" disabled>
+        Style this fit →
+      </button>
+    </div>
+
+    <div class="result-pane">
+      <div class="result-empty" id="resultEmpty">
+        <div class="big-mark">?</div>
+        <p>Upload a photo to get your read.<br>We'll tell you what's working and what's not.</p>
+      </div>
+
+      <div id="resultLoading" style="display:none;">
+        <div class="loading-row">
+          <div class="spinner"></div>
+          <span>Reading the fit...</span>
+        </div>
+      </div>
+
+      <div id="resultContent" style="display:none;"></div>
+
+      <div id="resultError" style="display:none;">
+        <div class="complex-flag" style="border-color:var(--muted);background:transparent;">
+          <p id="errorMsg">Something went wrong reading that photo. Try again, or book Olawale direct for the real eye.</p>
+          <a href="book.html" class="btn btn-lime">Book instead</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck — Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
