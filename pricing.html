@@ -15,7 +15,7 @@
 .tier-card .period{color:var(--muted);font-size:0.82rem;margin-bottom:18px;display:block;}
 .tier-card ul{list-style:none;padding:0;margin:0 0 28px;flex:1;}
 .tier-card li{font-size:0.86rem;color:var(--paper);padding:6px 0;border-bottom:1px solid rgba(58,56,46,0.4);}
-.tier-card li:before{content:"✓ ";color:var(--lime);}
+.tier-card li:before{content:"\2713 ";color:var(--lime);}
 .tier-card.highlight{background:var(--accent);}
 .tier-card.highlight .tag,.tier-card.highlight .period{color:rgba(21,19,15,0.7);}
 .tier-card.highlight h3,.tier-card.highlight li{color:var(--bg);}
@@ -45,7 +45,7 @@
   <div class="wrap" style="text-align:center;">
     <span class="tag" style="color:var(--lime)">// pricing</span>
     <h1 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem);">Pick your <span class="accent">lane.</span></h1>
-    <p class="lede" style="margin:0 auto;">From the odd fit-check to a fully built-out digital closet.</p>
+    <p class="lede" style="margin:0 auto;">Try the full closet free with 10 items. Go unlimited when you're ready.</p>
   </div>
 </header>
 
@@ -60,40 +60,41 @@
 
     <div class="tier-card">
       <span class="tag">Free</span>
-      <h3>₦0</h3>
+      <h3>&#8358;0</h3>
       <span class="period">forever</span>
       <ul>
         <li>5 fit-checks / month</li>
-        <li>Browse-only closet (10 items)</li>
+        <li>Full closet trial — 10 items</li>
+        <li>Outfit combos + day planning</li>
         <li>Book Olawale anytime</li>
       </ul>
-      <a href="style.html" class="btn">Start free →</a>
+      <a href="style.html" class="btn">Start free \u2192</a>
     </div>
 
     <div class="tier-card">
       <span class="tag">Style Pro</span>
-      <h3 id="proPrice">₦10,000</h3>
+      <h3 id="proPrice">&#8358;10,000</h3>
       <span class="period" id="proPeriod">/month</span>
       <ul>
         <li>Unlimited fit-checks</li>
-        <li>Closet still capped (10 items)</li>
+        <li>Closet trial still 10 items</li>
+        <li>Outfit combos + day planning</li>
         <li>Book Olawale anytime</li>
       </ul>
-      <button class="btn btn-solid" data-plan="pro">Subscribe →</button>
+      <button class="btn btn-solid" data-plan="pro">Subscribe \u2192</button>
     </div>
 
     <div class="tier-card highlight">
       <span class="tag">Closet</span>
-      <h3 id="closetPrice">₦50,000</h3>
+      <h3 id="closetPrice">&#8358;50,000</h3>
       <span class="period" id="closetPeriod">/month</span>
       <ul>
         <li>Unlimited fit-checks</li>
         <li>Unlimited wardrobe items</li>
-        <li>AI outfit combo checks</li>
-        <li>Day-of-week fit planning</li>
+        <li>Outfit combos + day planning</li>
         <li>Priority booking with Olawale</li>
       </ul>
-      <button class="btn" data-plan="closet">Subscribe →</button>
+      <button class="btn" data-plan="closet">Subscribe \u2192</button>
     </div>
 
   </div>

@@ -27,13 +27,12 @@
   <div class="wrap">
     <span class="tag" style="color:var(--lime)">// my closet</span>
     <h1 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem);">Build the <span class="accent">closet.</span></h1>
-    <p class="lede">Snap every piece you own. We'll help you combine them — and you decide what's on for Monday.</p>
+    <p class="lede">Snap every piece you own. We'll help you combine them — and you decide what's on for Monday. First 10 items are free to try.</p>
   </div>
 </header>
 
 <section class="wrap" style="padding-top:24px;">
 
-  <!-- AUTH GATE -->
   <div id="authGate" style="display:none;">
     <div class="auth-shell">
       <h2>Sign in to your closet</h2>
@@ -44,7 +43,6 @@
     </div>
   </div>
 
-  <!-- MAIN CLOSET UI -->
   <div id="closetApp" style="display:none;">
 
     <div class="wardrobe-header">
@@ -52,28 +50,15 @@
       <button class="btn" id="signOutBtn">Sign out</button>
     </div>
 
-    <div class="item-grid" id="itemGrid">
-      <!-- items + add-card injected here -->
-    </div>
+    <div class="item-grid" id="itemGrid"></div>
 
-    <div id="paywallNote" style="display:none;" class="tag" style="color:var(--muted);margin-bottom:20px;display:block;">
-      Up to 10 saved items on Free and Style Pro. <a href="pricing.html" style="color:var(--lime);text-decoration:underline;">Go unlimited with Closet.</a>
-    </div>
+    <div id="paywallNote" style="display:none;" class="tag" style="color:var(--muted);margin-bottom:20px;display:block;"></div>
 
     <div class="section-head" style="margin-top:8px;">
       <h2 style="font-size:1.5rem;">Build an outfit</h2>
       <span class="tag" style="color:var(--muted)">tap items to select</span>
     </div>
 
-    <!-- locked state for free users -->
-    <div id="comboLocked" style="display:none;" class="lock-overlay">
-      <div class="big-mark">🔒</div>
-      <h3>Outfit combos are a Closet plan thing</h3>
-      <p>Select pieces, get an instant verdict, and assign fits to your week — unlock unlimited everything with Closet.</p>
-      <a href="pricing.html" class="btn btn-lime">See pricing →</a>
-    </div>
-
-    <!-- unlocked combo builder -->
     <div id="comboUnlocked" style="display:none;">
       <div id="comboResult" style="display:none;margin-bottom:20px;" class="result-card"></div>
       <div class="combo-bar">

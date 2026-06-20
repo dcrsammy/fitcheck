@@ -1,7 +1,8 @@
 /* =========================================================
    FITCHECK — wardrobe.js
    Auth (Supabase magic link), wardrobe items, outfit combos,
-   day assignment, paywall gating.
+   day assignment. Everyone gets the full closet feature set
+   up to 10 items (free trial). Closet plan removes the cap.
    ========================================================= */
 
 (function () {
@@ -22,20 +23,17 @@
   const itemGrid = document.getElementById("itemGrid");
   const paywallNote = document.getElementById("paywallNote");
   const itemFileInput = document.getElementById("itemFileInput");
-  const comboLocked = document.getElementById("comboLocked");
   const comboUnlocked = document.getElementById("comboUnlocked");
   const comboCheckBtn = document.getElementById("comboCheckBtn");
   const comboResult = document.getElementById("comboResult");
   const dayPicker = document.getElementById("dayPicker");
 
   let currentUser = null;
-  let userPlan = "free"; // "free" | "pro" | "closet"
-  let closetUnlocked = false; // only true plan === "closet"
+  let userPlan = "free";
+  let unlimitedItems = false;
   let wardrobeItems = [];
   let selectedItemIds = new Set();
   let selectedDay = null;
-
-  /* ---------- AUTH ---------- */
 
   authSendBtn.addEventListener("click", async () => {
     const email = authEmail.value.trim();
@@ -75,8 +73,6 @@
     }
   }
 
-  /* ---------- PROFILE / PLAN ---------- */
-
   async function loadProfile() {
     const { data, error } = await supabase
       .from("profiles")
@@ -89,17 +85,14 @@
       const notExpired = !data.plan_expires_at || new Date(data.plan_expires_at) > new Date();
       userPlan = notExpired ? (data.plan || "free") : "free";
     }
-    closetUnlocked = userPlan === "closet";
+    unlimitedItems = userPlan === "closet";
 
-    const planLabels = { free: "Free plan", pro: "Style Pro ✓", closet: "Closet plan ✓" };
+    const planLabels = { free: "Free plan", pro: "Style Pro \u2713", closet: "Closet plan \u2713" };
     planPill.textContent = planLabels[userPlan];
     planPill.classList.toggle("active", userPlan !== "free");
 
-    comboLocked.style.display = closetUnlocked ? "none" : "block";
-    comboUnlocked.style.display = closetUnlocked ? "block" : "none";
+    comboUnlocked.style.display = "block";
   }
-
-  /* ---------- WARDROBE ITEMS ---------- */
 
   async function loadItems() {
     const { data, error } = await supabase
@@ -119,21 +112,18 @@
       const card = document.createElement("div");
       card.className = "item-card";
       card.dataset.id = item.id;
-      card.innerHTML = `
-        <img src="${item.image_url}" alt="${escapeHtml(item.description || item.category || "item")}">
-        <div class="item-meta">
-          <div class="cat">${escapeHtml(item.category || "")}</div>
-          <div class="desc">${escapeHtml(item.ai_description || "")}</div>
-        </div>
-        <div class="check">✓</div>
-      `;
-      if (closetUnlocked) {
-        card.addEventListener("click", () => toggleSelect(item.id, card));
-      }
+      card.innerHTML =
+        '<img src="' + item.image_url + '" alt="' + escapeHtml(item.description || item.category || "item") + '">' +
+        '<div class="item-meta">' +
+        '<div class="cat">' + escapeHtml(item.category || "") + "</div>" +
+        '<div class="desc">' + escapeHtml(item.ai_description || "") + "</div>" +
+        "</div>" +
+        '<div class="check">\u2713</div>';
+      card.addEventListener("click", () => toggleSelect(item.id, card));
       itemGrid.appendChild(card);
     });
 
-    const atLimit = !closetUnlocked && wardrobeItems.length >= FREE_ITEM_LIMIT;
+    const atLimit = !unlimitedItems && wardrobeItems.length >= FREE_ITEM_LIMIT;
     if (!atLimit) {
       const addCard = document.createElement("div");
       addCard.className = "add-item-card";
@@ -142,7 +132,12 @@
       itemGrid.appendChild(addCard);
     }
 
-    paywallNote.style.display = !closetUnlocked ? "block" : "none";
+    paywallNote.style.display = !unlimitedItems ? "block" : "none";
+    if (!unlimitedItems) {
+      paywallNote.innerHTML =
+        "Free trial: " + wardrobeItems.length + "/" + FREE_ITEM_LIMIT +
+        ' items used. <a href="pricing.html" style="color:var(--lime);text-decoration:underline;">Go unlimited with Closet \u2014 \u20a650,000/month.</a>';
+    }
   }
 
   function toggleSelect(id, card) {
@@ -173,7 +168,6 @@
     const base64 = dataUrl.split(",")[1];
 
     try {
-      // 1. Tag the item via Claude vision
       const tagRes = await fetch("/.netlify/functions/tag-item", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -182,18 +176,16 @@
       if (!tagRes.ok) throw new Error("Tagging failed");
       const tagData = await tagRes.json();
 
-      // 2. Upload the image to Cloudinary (unsigned preset)
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", cfg.CLOUDINARY_UPLOAD_PRESET);
       const uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${cfg.CLOUDINARY_CLOUD_NAME}/image/upload`,
+        "https://api.cloudinary.com/v1_1/" + cfg.CLOUDINARY_CLOUD_NAME + "/image/upload",
         { method: "POST", body: formData }
       );
       if (!uploadRes.ok) throw new Error("Image upload failed");
       const uploadData = await uploadRes.json();
 
-      // 3. Save to Supabase
       const { error } = await supabase.from("wardrobe_items").insert([
         {
           user_id: currentUser.id,
@@ -209,11 +201,9 @@
       await loadItems();
     } catch (err) {
       console.error(err);
-      alert("Couldn't add that item — try again.");
+      alert("Couldn't add that item \u2014 try again.");
     }
   }
-
-  /* ---------- DAY PICKER ---------- */
 
   dayPicker.addEventListener("click", (e) => {
     const chip = e.target.closest(".day-chip");
@@ -227,8 +217,6 @@
       selectedDay = null;
     }
   });
-
-  /* ---------- COMBO CHECK ---------- */
 
   comboCheckBtn.addEventListener("click", async () => {
     const items = wardrobeItems.filter((it) => selectedItemIds.has(it.id));
@@ -254,13 +242,11 @@
       const data = await res.json();
 
       comboResult.style.display = "block";
-      comboResult.innerHTML = `
-        <h4>${escapeHtml((data.rating || "").toUpperCase())}</h4>
-        <p>${escapeHtml(data.verdict || "")}</p>
-        ${data.tweak ? `<p style="color:var(--lime);">${escapeHtml(data.tweak)}</p>` : ""}
-      `;
+      comboResult.innerHTML =
+        "<h4>" + escapeHtml((data.rating || "").toUpperCase()) + "</h4>" +
+        "<p>" + escapeHtml(data.verdict || "") + "</p>" +
+        (data.tweak ? '<p style="color:var(--lime);">' + escapeHtml(data.tweak) + "</p>" : "");
 
-      // Save the outfit (with day assignment if picked)
       await supabase.from("outfits").insert([
         {
           user_id: currentUser.id,
@@ -271,10 +257,10 @@
       ]);
     } catch (err) {
       console.error(err);
-      alert("Couldn't check that combo — try again.");
+      alert("Couldn't check that combo \u2014 try again.");
     } finally {
       comboCheckBtn.disabled = false;
-      comboCheckBtn.textContent = "Check this combo →";
+      comboCheckBtn.textContent = "Check this combo \u2192";
     }
   });
 
