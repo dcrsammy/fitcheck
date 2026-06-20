@@ -6,6 +6,23 @@
 (function () {
   "use strict";
 
+  /* ---------------- MOBILE NAV TOGGLE (every page) ---------------- */
+  const navToggle = document.getElementById("navToggle");
+  const navLinks = document.getElementById("navLinks");
+  if (navToggle && navLinks) {
+    navToggle.addEventListener("click", () => {
+      const isOpen = navLinks.classList.toggle("open");
+      navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+    // close menu after tapping a link
+    navLinks.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        navLinks.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+
   /* ---------------- STYLE TOOL (style.html) ---------------- */
   const uploadZone = document.getElementById("uploadZone");
   if (uploadZone) {

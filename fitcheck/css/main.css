@@ -443,5 +443,25 @@ a:focus-visible, button:focus-visible, .chip:focus-visible, .svc-option:focus-vi
   .tool-shell{grid-template-columns:1fr;}
   .book-grid{grid-template-columns:1fr;}
   .field-row{grid-template-columns:1fr;}
-  .nav-links{display:none;}
+/* ---------- mobile nav ---------- */
+.nav-toggle{
+  display:none;
+  background:none;border:1px solid var(--line);color:var(--paper);
+  width:38px;height:38px;border-radius:var(--radius);font-size:1.1rem;
+  cursor:pointer;align-items:center;justify-content:center;
+}
+@media (max-width:900px){
+  .nav-toggle{display:flex;}
+  .nav-links{
+    display:flex;flex-direction:column;align-items:flex-start;gap:0;
+    position:fixed;top:64px;left:0;right:0;
+    background:var(--bg);border-bottom:1px solid var(--line);
+    max-height:0;overflow:hidden;
+    transition:max-height .25s ease;
+    z-index:49;
+  }
+  .nav-links.open{max-height:400px;}
+  .nav-links a{width:100%;padding:16px 24px;border-bottom:1px solid var(--line);}
+  .nav-links .nav-cta{margin:16px 24px;width:calc(100% - 48px);text-align:center;}
+}
 }
