@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<style>
+.tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:8px;}
+.tier-card{background:var(--bg);padding:36px 28px;display:flex;flex-direction:column;}
+.tier-card .tag{color:var(--lime);margin-bottom:10px;}
+.tier-card h3{font-size:1.6rem;margin:0 0 4px;}
+.tier-card .period{color:var(--muted);font-size:0.82rem;margin-bottom:18px;display:block;}
+.tier-card ul{list-style:none;padding:0;margin:0 0 28px;flex:1;}
+.tier-card li{font-size:0.86rem;color:var(--paper);padding:6px 0;border-bottom:1px solid rgba(58,56,46,0.4);}
+.tier-card li:before{content:"✓ ";color:var(--lime);}
+.tier-card.highlight{background:var(--accent);}
+.tier-card.highlight .tag,.tier-card.highlight .period{color:rgba(21,19,15,0.7);}
+.tier-card.highlight h3,.tier-card.highlight li{color:var(--bg);}
+.tier-card.highlight li:before{color:var(--bg);}
+.tier-card.highlight .btn{border-color:var(--bg);color:var(--bg);}
+.tier-card.highlight .btn:hover{background:var(--bg);color:var(--accent);}
+.billing-toggle{display:flex;gap:8px;justify-content:center;margin:28px 0;}
+@media (max-width:900px){.tier-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="style.html">Style My Fit</a>
+    <a href="wardrobe.html">My Closet</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:64px 0 48px;">
+  <div class="wrap" style="text-align:center;">
+    <span class="tag" style="color:var(--lime)">// pricing</span>
+    <h1 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem);">Pick your <span class="accent">lane.</span></h1>
+    <p class="lede" style="margin:0 auto;">From the odd fit-check to a fully built-out digital closet.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:16px;">
+
+  <div class="billing-toggle">
+    <div class="price-chip active" data-billing="monthly">Monthly</div>
+    <div class="price-chip" data-billing="yearly">Yearly</div>
+  </div>
+
+  <div class="tier-grid">
+
+    <div class="tier-card">
+      <span class="tag">Free</span>
+      <h3>₦0</h3>
+      <span class="period">forever</span>
+      <ul>
+        <li>5 fit-checks / month</li>
+        <li>Browse-only closet (10 items)</li>
+        <li>Book Olawale anytime</li>
+      </ul>
+      <a href="style.html" class="btn">Start free →</a>
+    </div>
+
+    <div class="tier-card">
+      <span class="tag">Style Pro</span>
+      <h3 id="proPrice">₦10,000</h3>
+      <span class="period" id="proPeriod">/month</span>
+      <ul>
+        <li>Unlimited fit-checks</li>
+        <li>Closet still capped (10 items)</li>
+        <li>Book Olawale anytime</li>
+      </ul>
+      <button class="btn btn-solid" data-plan="pro">Subscribe →</button>
+    </div>
+
+    <div class="tier-card highlight">
+      <span class="tag">Closet</span>
+      <h3 id="closetPrice">₦50,000</h3>
+      <span class="period" id="closetPeriod">/month</span>
+      <ul>
+        <li>Unlimited fit-checks</li>
+        <li>Unlimited wardrobe items</li>
+        <li>AI outfit combo checks</li>
+        <li>Day-of-week fit planning</li>
+        <li>Priority booking with Olawale</li>
+      </ul>
+      <button class="btn" data-plan="closet">Subscribe →</button>
+    </div>
+
+  </div>
+
+  <p class="tag" style="color:var(--muted);text-align:center;margin-top:24px;">
+    Need to sign in first? <a href="wardrobe.html" style="color:var(--lime);">Go to My Closet</a>
+  </p>
+
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck — Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/pricing.js"></script>
+</body>
+</html>

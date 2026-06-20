@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Closet — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="style.html">Style My Fit</a>
+    <a href="wardrobe.html" class="active">My Closet</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:64px 0 48px;">
+  <div class="wrap">
+    <span class="tag" style="color:var(--lime)">// my closet</span>
+    <h1 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem);">Build the <span class="accent">closet.</span></h1>
+    <p class="lede">Snap every piece you own. We'll help you combine them — and you decide what's on for Monday.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:24px;">
+
+  <!-- AUTH GATE -->
+  <div id="authGate" style="display:none;">
+    <div class="auth-shell">
+      <h2>Sign in to your closet</h2>
+      <p>We'll send a magic link — no password needed.</p>
+      <input type="email" id="authEmail" placeholder="you@email.com" autocomplete="email">
+      <button class="btn btn-solid" id="authSendBtn" style="width:100%;">Send magic link →</button>
+      <div class="auth-msg" id="authMsg" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CLOSET UI -->
+  <div id="closetApp" style="display:none;">
+
+    <div class="wardrobe-header">
+      <span class="plan-pill" id="planPill">Free plan</span>
+      <button class="btn" id="signOutBtn">Sign out</button>
+    </div>
+
+    <div class="item-grid" id="itemGrid">
+      <!-- items + add-card injected here -->
+    </div>
+
+    <div id="paywallNote" style="display:none;" class="tag" style="color:var(--muted);margin-bottom:20px;display:block;">
+      Up to 10 saved items on Free and Style Pro. <a href="pricing.html" style="color:var(--lime);text-decoration:underline;">Go unlimited with Closet.</a>
+    </div>
+
+    <div class="section-head" style="margin-top:8px;">
+      <h2 style="font-size:1.5rem;">Build an outfit</h2>
+      <span class="tag" style="color:var(--muted)">tap items to select</span>
+    </div>
+
+    <!-- locked state for free users -->
+    <div id="comboLocked" style="display:none;" class="lock-overlay">
+      <div class="big-mark">🔒</div>
+      <h3>Outfit combos are a Closet plan thing</h3>
+      <p>Select pieces, get an instant verdict, and assign fits to your week — unlock unlimited everything with Closet.</p>
+      <a href="pricing.html" class="btn btn-lime">See pricing →</a>
+    </div>
+
+    <!-- unlocked combo builder -->
+    <div id="comboUnlocked" style="display:none;">
+      <div id="comboResult" style="display:none;margin-bottom:20px;" class="result-card"></div>
+      <div class="combo-bar">
+        <div class="day-picker" id="dayPicker">
+          <div class="day-chip" data-day="monday">Mon</div>
+          <div class="day-chip" data-day="tuesday">Tue</div>
+          <div class="day-chip" data-day="wednesday">Wed</div>
+          <div class="day-chip" data-day="thursday">Thu</div>
+          <div class="day-chip" data-day="friday">Fri</div>
+          <div class="day-chip" data-day="saturday">Sat</div>
+          <div class="day-chip" data-day="sunday">Sun</div>
+        </div>
+        <button class="btn btn-solid" id="comboCheckBtn" disabled>Check this combo →</button>
+      </div>
+    </div>
+
+    <input type="file" id="itemFileInput" accept="image/*" style="display:none;">
+  </div>
+
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck — Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/wardrobe.js"></script>
+</body>
+</html>
