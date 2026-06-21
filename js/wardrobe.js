@@ -370,13 +370,16 @@
       });
       if (!res.ok) throw new Error("Combo check failed");
       const data = await res.json();
-
-      comboResult.style.display = "block";
+comboResult.style.display = "block";
+      const thumbsHtml = items
+        .map((it) => '<img src="' + it.image_url + '" alt="" class="combo-thumb">')
+        .join("");
       comboResult.innerHTML =
+        '<div class="combo-thumbs">' + thumbsHtml + "</div>" +
         "<h4>" + escapeHtml((data.rating || "").toUpperCase()) + "</h4>" +
         "<p>" + escapeHtml(data.verdict || "") + "</p>" +
         (data.tweak ? '<p style="color:var(--lime);">' + escapeHtml(data.tweak) + "</p>" : "");
-
+      
       await supabase.from("outfits").insert([
         {
           user_id: currentUser.id,

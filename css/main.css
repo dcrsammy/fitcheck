@@ -475,3 +475,7 @@ a:focus-visible, button:focus-visible, .chip:focus-visible, .svc-option:focus-vi
   border-bottom:1px solid var(--line);padding-bottom:10px;display:flex;justify-content:space-between;
 }
 .category-label .count{color:var(--muted);}
+
+/* ---------- combo result thumbnails ---------- */
+.combo-thumbs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.combo-thumb{width:64px;height:64px;object-fit:cover;border:1px solid var(--line);border-radius:var(--radius);}
