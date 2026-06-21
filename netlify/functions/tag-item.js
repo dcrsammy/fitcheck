@@ -1,11 +1,17 @@
 // netlify/functions/tag-item.js
 //
 // Tags a single garment photo — category, color, short tags, description.
-// Used when building the wardrobe (one photo per item).
-// Requires ANTHROPIC_API_KEY in Netlify environment variables.
+// Accepts an optional user note for extra context. Requires
+// ANTHROPIC_API_KEY in Netlify environment variables.
 
 const SYSTEM_PROMPT = `You are a garment-tagging assistant for FitCheck, a Lagos styling app.
 Look at ONE clothing item (or accessory/shoe) in the photo and identify it.
+
+Apply basic color theory when describing the color — note if it's a warm tone (red, orange,
+mustard, olive) or cool tone (blue, teal, lavender) or neutral (black, white, grey, beige, denim),
+since this helps later when matching pieces into outfits.
+
+If the person added a note about the item, factor it into your description where relevant.
 
 Respond with ONLY valid JSON, no markdown, no preamble, exactly this shape:
 {
@@ -35,10 +41,13 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body" }) };
   }
 
-  const { image, mediaType } = body;
+  const { image, mediaType, userPrompt } = body;
   if (!image || !mediaType) {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing image" }) };
   }
+
+  const safeUserPrompt = (userPrompt || "").toString().slice(0, 300).trim();
+  const userPromptLine = safeUserPrompt ? `\n\nNote from the person: "${safeUserPrompt}"` : "";
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -50,14 +59,14 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 300,
+        max_tokens: 350,
         system: SYSTEM_PROMPT,
         messages: [
           {
             role: "user",
             content: [
               { type: "image", source: { type: "base64", media_type: mediaType, data: image } },
-              { type: "text", text: "Tag this item. Respond with the JSON shape only." },
+              { type: "text", text: `Tag this item.${userPromptLine}\n\nRespond with the JSON shape only.` },
             ],
           },
         ],

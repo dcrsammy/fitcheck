@@ -35,9 +35,9 @@
     <div class="tool-pane">
       <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Upload a photo of your outfit">
         <div id="uploadDefault">
-          <div class="upload-icon">📷</div>
+          <div class="upload-icon">\u{1F4F7}</div>
           <strong>Drop a photo or tap to upload</strong>
-          <span class="tag">JPG or PNG · one fit at a time</span>
+          <span class="tag">JPG or PNG \u00b7 one fit at a time</span>
         </div>
         <div id="uploadPreviewWrap" style="display:none;">
           <div class="preview-polaroid">
@@ -46,6 +46,11 @@
           </div>
         </div>
         <input type="file" id="fileInput" accept="image/*">
+      </div>
+
+      <div class="field" style="margin-top:20px;">
+        <label for="userPrompt">Anything we should know? (optional)</label>
+        <textarea id="userPrompt" placeholder="e.g. 'going to an interview, want to look sharp but not stiff' or 'is the belt too much?'" rows="2"></textarea>
       </div>
 
       <div class="occasion-select">
@@ -60,7 +65,7 @@
       </div>
 
       <button class="btn btn-solid" id="analyzeBtn" style="width:100%;margin-top:28px;" disabled>
-        Style this fit →
+        Style this fit \u2192
       </button>
     </div>
 
@@ -92,7 +97,7 @@
 
 <footer>
   <div class="wrap footer-row">
-    <span class="tag">FitCheck — Lagos</span>
+    <span class="tag">FitCheck \u2014 Lagos</span>
     <span class="tag">Styled by Olawale Akomolafe</span>
   </div>
 </footer>

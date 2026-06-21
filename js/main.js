@@ -1,6 +1,7 @@
 /* =========================================================
    FITCHECK — main.js
-   Handles: upload+style tool (style.html), booking form (book.html)
+   Handles: upload+style tool (style.html), booking form (book.html),
+   mobile nav toggle (every page)
    ========================================================= */
 
 (function () {
@@ -14,7 +15,6 @@
       const isOpen = navLinks.classList.toggle("open");
       navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
-    // close menu after tapping a link
     navLinks.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
         navLinks.classList.remove("open");
@@ -33,6 +33,7 @@
     const previewCap = document.getElementById("previewCap");
     const analyzeBtn = document.getElementById("analyzeBtn");
     const occasionChips = document.getElementById("occasionChips");
+    const userPrompt = document.getElementById("userPrompt");
     const resultEmpty = document.getElementById("resultEmpty");
     const resultLoading = document.getElementById("resultLoading");
     const resultContent = document.getElementById("resultContent");
@@ -77,7 +78,7 @@
         uploadPreviewWrap.style.display = "block";
         previewImg.src = dataUrl;
         previewImg.classList.remove("developing");
-        void previewImg.offsetWidth; // restart animation
+        void previewImg.offsetWidth;
         previewImg.classList.add("developing");
         previewCap.textContent = file.name.slice(0, 24);
         analyzeBtn.disabled = false;
@@ -115,6 +116,7 @@
             image: currentBase64,
             mediaType: currentMediaType,
             occasion: selectedOccasion,
+            userPrompt: userPrompt ? userPrompt.value.trim() : "",
           }),
         });
 
@@ -219,7 +221,7 @@
         bookConfirm.style.display = "block";
       } catch (err) {
         bookSubmit.disabled = false;
-        bookSubmit.textContent = "Request booking →";
+        bookSubmit.textContent = "Request booking \u2192";
         alert("Couldn't send that — check your connection and try again, or WhatsApp Olawale direct.");
       }
     });

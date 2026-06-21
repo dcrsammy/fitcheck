@@ -1,8 +1,7 @@
 /* =========================================================
    FITCHECK — wardrobe.js
    Email/password auth, wardrobe items, outfit combos,
-   day assignment. Everyone gets the full closet feature set
-   up to 10 items (free trial). Closet plan removes the cap.
+   day assignment, optional context prompts on upload + combo.
    ========================================================= */
 
 (function () {
@@ -29,9 +28,11 @@
   const signOutBtn = document.getElementById("signOutBtn");
   const planPill = document.getElementById("planPill");
   const itemGrid = document.getElementById("itemGrid");
+  const itemPromptInput = document.getElementById("itemPromptInput");
   const paywallNote = document.getElementById("paywallNote");
   const itemFileInput = document.getElementById("itemFileInput");
   const comboUnlocked = document.getElementById("comboUnlocked");
+  const comboPromptInput = document.getElementById("comboPromptInput");
   const comboCheckBtn = document.getElementById("comboCheckBtn");
   const comboResult = document.getElementById("comboResult");
   const dayPicker = document.getElementById("dayPicker");
@@ -61,8 +62,6 @@
     authMsg.style.display = "none";
   });
 
-  /* ---------- SIGN UP ---------- */
-
   signUpBtn.addEventListener("click", async () => {
     const email = signUpEmail.value.trim();
     const password = signUpPassword.value;
@@ -84,15 +83,12 @@
     }
 
     if (data.session) {
-      // No email confirmation required — signed in immediately
       currentUser = data.session.user;
       showApp();
     } else {
       showAuthMsg("Account created. Check your email to confirm, then sign in.");
     }
   });
-
-  /* ---------- SIGN IN ---------- */
 
   signInBtn.addEventListener("click", async () => {
     const email = signInEmail.value.trim();
@@ -237,6 +233,8 @@
   });
 
   async function addItem(file) {
+    const note = itemPromptInput ? itemPromptInput.value.trim().slice(0, 300) : "";
+
     const reader = new FileReader();
     const dataUrl = await new Promise((resolve) => {
       reader.onload = (ev) => resolve(ev.target.result);
@@ -248,7 +246,7 @@
       const tagRes = await fetch("/.netlify/functions/tag-item", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, mediaType: file.type }),
+        body: JSON.stringify({ image: base64, mediaType: file.type, userPrompt: note }),
       });
       if (!tagRes.ok) throw new Error("Tagging failed");
       const tagData = await tagRes.json();
@@ -275,6 +273,7 @@
       ]);
       if (error) throw error;
 
+      if (itemPromptInput) itemPromptInput.value = "";
       await loadItems();
     } catch (err) {
       console.error(err);
@@ -303,6 +302,8 @@
     const items = wardrobeItems.filter((it) => selectedItemIds.has(it.id));
     if (items.length < 2) return;
 
+    const note = comboPromptInput ? comboPromptInput.value.trim().slice(0, 300) : "";
+
     comboCheckBtn.disabled = true;
     comboCheckBtn.textContent = "Checking...";
 
@@ -317,6 +318,7 @@
             tags: it.tags,
             description: it.ai_description,
           })),
+          userPrompt: note,
         }),
       });
       if (!res.ok) throw new Error("Combo check failed");
@@ -336,6 +338,8 @@
           ai_verdict: data.verdict,
         },
       ]);
+
+      if (comboPromptInput) comboPromptInput.value = "";
     } catch (err) {
       console.error(err);
       alert("Couldn't check that combo \u2014 try again.");

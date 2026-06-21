@@ -45,7 +45,7 @@
         <p>Sign in to your closet.</p>
         <input type="email" id="signInEmail" placeholder="you@email.com" autocomplete="email">
         <input type="password" id="signInPassword" placeholder="Password" autocomplete="current-password">
-        <button class="btn btn-solid" id="signInBtn" style="width:100%;">Sign in →</button>
+        <button class="btn btn-solid" id="signInBtn" style="width:100%;">Sign in \u2192</button>
       </div>
 
       <div id="signUpForm" style="display:none;">
@@ -53,7 +53,7 @@
         <p>One account, no link to chase.</p>
         <input type="email" id="signUpEmail" placeholder="you@email.com" autocomplete="email">
         <input type="password" id="signUpPassword" placeholder="Password (min 6 characters)" autocomplete="new-password">
-        <button class="btn btn-solid" id="signUpBtn" style="width:100%;">Create account →</button>
+        <button class="btn btn-solid" id="signUpBtn" style="width:100%;">Create account \u2192</button>
       </div>
 
       <div class="auth-msg" id="authMsg" style="display:none;"></div>
@@ -67,6 +67,11 @@
       <button class="btn" id="signOutBtn">Sign out</button>
     </div>
 
+    <div class="field" style="max-width:480px;margin-bottom:18px;">
+      <label for="itemPromptInput">Note for the next item you add (optional)</label>
+      <input type="text" id="itemPromptInput" placeholder="e.g. 'this is for the rainy season' or 'not sure what this goes with'">
+    </div>
+
     <div class="item-grid" id="itemGrid"></div>
 
     <div id="paywallNote" style="display:none;" class="tag" style="color:var(--muted);margin-bottom:20px;display:block;"></div>
@@ -77,6 +82,10 @@
     </div>
 
     <div id="comboUnlocked" style="display:none;">
+      <div class="field" style="max-width:480px;">
+        <label for="comboPromptInput">Anything we should know about this combo? (optional)</label>
+        <input type="text" id="comboPromptInput" placeholder="e.g. 'is this too much for a Tuesday?'">
+      </div>
       <div id="comboResult" style="display:none;margin-bottom:20px;" class="result-card"></div>
       <div class="combo-bar">
         <div class="day-picker" id="dayPicker">
@@ -88,7 +97,7 @@
           <div class="day-chip" data-day="saturday">Sat</div>
           <div class="day-chip" data-day="sunday">Sun</div>
         </div>
-        <button class="btn btn-solid" id="comboCheckBtn" disabled>Check this combo →</button>
+        <button class="btn btn-solid" id="comboCheckBtn" disabled>Check this combo \u2192</button>
       </div>
     </div>
 
@@ -99,7 +108,7 @@
 
 <footer>
   <div class="wrap footer-row">
-    <span class="tag">FitCheck — Lagos</span>
+    <span class="tag">FitCheck \u2014 Lagos</span>
     <span class="tag">Styled by Olawale Akomolafe</span>
   </div>
 </footer>
