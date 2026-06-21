@@ -35,10 +35,27 @@
 
   <div id="authGate" style="display:none;">
     <div class="auth-shell">
-      <h2>Sign in to your closet</h2>
-      <p>We'll send a magic link — no password needed.</p>
-      <input type="email" id="authEmail" placeholder="you@email.com" autocomplete="email">
-      <button class="btn btn-solid" id="authSendBtn" style="width:100%;">Send magic link →</button>
+      <div style="display:flex;gap:8px;margin-bottom:24px;justify-content:center;">
+        <button class="price-chip active" id="tabSignIn" type="button">Sign in</button>
+        <button class="price-chip" id="tabSignUp" type="button">Create account</button>
+      </div>
+
+      <div id="signInForm">
+        <h2>Welcome back</h2>
+        <p>Sign in to your closet.</p>
+        <input type="email" id="signInEmail" placeholder="you@email.com" autocomplete="email">
+        <input type="password" id="signInPassword" placeholder="Password" autocomplete="current-password">
+        <button class="btn btn-solid" id="signInBtn" style="width:100%;">Sign in →</button>
+      </div>
+
+      <div id="signUpForm" style="display:none;">
+        <h2>Create your closet</h2>
+        <p>One account, no link to chase.</p>
+        <input type="email" id="signUpEmail" placeholder="you@email.com" autocomplete="email">
+        <input type="password" id="signUpPassword" placeholder="Password (min 6 characters)" autocomplete="new-password">
+        <button class="btn btn-solid" id="signUpBtn" style="width:100%;">Create account →</button>
+      </div>
+
       <div class="auth-msg" id="authMsg" style="display:none;"></div>
     </div>
   </div>

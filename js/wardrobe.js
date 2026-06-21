@@ -1,6 +1,6 @@
 /* =========================================================
    FITCHECK — wardrobe.js
-   Auth (Supabase magic link), wardrobe items, outfit combos,
+   Email/password auth, wardrobe items, outfit combos,
    day assignment. Everyone gets the full closet feature set
    up to 10 items (free trial). Closet plan removes the cap.
    ========================================================= */
@@ -15,8 +15,16 @@
 
   const authGate = document.getElementById("authGate");
   const closetApp = document.getElementById("closetApp");
-  const authEmail = document.getElementById("authEmail");
-  const authSendBtn = document.getElementById("authSendBtn");
+  const tabSignIn = document.getElementById("tabSignIn");
+  const tabSignUp = document.getElementById("tabSignUp");
+  const signInForm = document.getElementById("signInForm");
+  const signUpForm = document.getElementById("signUpForm");
+  const signInEmail = document.getElementById("signInEmail");
+  const signInPassword = document.getElementById("signInPassword");
+  const signInBtn = document.getElementById("signInBtn");
+  const signUpEmail = document.getElementById("signUpEmail");
+  const signUpPassword = document.getElementById("signUpPassword");
+  const signUpBtn = document.getElementById("signUpBtn");
   const authMsg = document.getElementById("authMsg");
   const signOutBtn = document.getElementById("signOutBtn");
   const planPill = document.getElementById("planPill");
@@ -35,43 +43,110 @@
   let selectedItemIds = new Set();
   let selectedDay = null;
 
-  authSendBtn.addEventListener("click", async () => {
-    const email = authEmail.value.trim();
-    if (!email) return;
-    authSendBtn.disabled = true;
-    authSendBtn.textContent = "Sending...";
+  /* ---------- AUTH TABS ---------- */
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.href },
-    });
-
-    authSendBtn.disabled = false;
-    authSendBtn.textContent = "Send magic link →";
-    authMsg.style.display = "block";
-    authMsg.textContent = error
-      ? "Couldn't send that — check the email and try again."
-      : "Check your inbox — tap the link to come back here signed in.";
+  tabSignIn.addEventListener("click", () => {
+    tabSignIn.classList.add("active");
+    tabSignUp.classList.remove("active");
+    signInForm.style.display = "block";
+    signUpForm.style.display = "none";
+    authMsg.style.display = "none";
   });
+
+  tabSignUp.addEventListener("click", () => {
+    tabSignUp.classList.add("active");
+    tabSignIn.classList.remove("active");
+    signUpForm.style.display = "block";
+    signInForm.style.display = "none";
+    authMsg.style.display = "none";
+  });
+
+  /* ---------- SIGN UP ---------- */
+
+  signUpBtn.addEventListener("click", async () => {
+    const email = signUpEmail.value.trim();
+    const password = signUpPassword.value;
+    if (!email || password.length < 6) {
+      showAuthMsg("Enter a valid email and a password of at least 6 characters.");
+      return;
+    }
+    signUpBtn.disabled = true;
+    signUpBtn.textContent = "Creating...";
+
+    const { data, error } = await supabase.auth.signUp({ email, password });
+
+    signUpBtn.disabled = false;
+    signUpBtn.textContent = "Create account \u2192";
+
+    if (error) {
+      showAuthMsg(error.message || "Couldn't create that account — try again.");
+      return;
+    }
+
+    if (data.session) {
+      // No email confirmation required — signed in immediately
+      currentUser = data.session.user;
+      showApp();
+    } else {
+      showAuthMsg("Account created. Check your email to confirm, then sign in.");
+    }
+  });
+
+  /* ---------- SIGN IN ---------- */
+
+  signInBtn.addEventListener("click", async () => {
+    const email = signInEmail.value.trim();
+    const password = signInPassword.value;
+    if (!email || !password) {
+      showAuthMsg("Enter your email and password.");
+      return;
+    }
+    signInBtn.disabled = true;
+    signInBtn.textContent = "Signing in...";
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    signInBtn.disabled = false;
+    signInBtn.textContent = "Sign in \u2192";
+
+    if (error) {
+      showAuthMsg(error.message || "Couldn't sign in — check your email and password.");
+      return;
+    }
+
+    currentUser = data.session.user;
+    showApp();
+  });
+
+  function showAuthMsg(text) {
+    authMsg.style.display = "block";
+    authMsg.textContent = text;
+  }
 
   signOutBtn.addEventListener("click", async () => {
     await supabase.auth.signOut();
     window.location.reload();
   });
 
+  async function showApp() {
+    authGate.style.display = "none";
+    closetApp.style.display = "block";
+    await loadProfile();
+    await loadItems();
+  }
+
   async function initAuth() {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
       currentUser = data.session.user;
-      authGate.style.display = "none";
-      closetApp.style.display = "block";
-      await loadProfile();
-      await loadItems();
+      await showApp();
     } else {
       authGate.style.display = "block";
       closetApp.style.display = "none";
     }
   }
+
+  /* ---------- PROFILE / PLAN ---------- */
 
   async function loadProfile() {
     const { data, error } = await supabase
@@ -93,6 +168,8 @@
 
     comboUnlocked.style.display = "block";
   }
+
+  /* ---------- WARDROBE ITEMS ---------- */
 
   async function loadItems() {
     const { data, error } = await supabase
@@ -205,6 +282,8 @@
     }
   }
 
+  /* ---------- DAY PICKER ---------- */
+
   dayPicker.addEventListener("click", (e) => {
     const chip = e.target.closest(".day-chip");
     if (!chip) return;
@@ -217,6 +296,8 @@
       selectedDay = null;
     }
   });
+
+  /* ---------- COMBO CHECK ---------- */
 
   comboCheckBtn.addEventListener("click", async () => {
     const items = wardrobeItems.filter((it) => selectedItemIds.has(it.id));
