@@ -1,7 +1,7 @@
 /* =========================================================
    FITCHECK — wardrobe.js
    Email/password auth, wardrobe items, outfit combos,
-   day assignment, optional context prompts on upload + combo.
+   day assignment, optional context prompts, multi-upload.
    ========================================================= */
 
 (function () {
@@ -186,10 +186,9 @@
       card.className = "item-card";
       card.dataset.id = item.id;
       card.innerHTML =
-        '<img src="' + item.image_url + '" alt="' + escapeHtml(item.description || item.category || "item") + '">' +
+        '<img src="' + item.image_url + '" alt="' + escapeHtml(item.category || "item") + '">' +
         '<div class="item-meta">' +
         '<div class="cat">' + escapeHtml(item.category || "") + "</div>" +
-        '<div class="desc">' + escapeHtml(item.ai_description || "") + "</div>" +
         "</div>" +
         '<div class="check">\u2713</div>';
       card.addEventListener("click", () => toggleSelect(item.id, card));
@@ -226,10 +225,24 @@
   }
 
   itemFileInput.addEventListener("change", async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
+    const files = e.target.files ? Array.from(e.target.files) : [];
     itemFileInput.value = "";
-    await addItem(file);
+    if (!files.length) return;
+
+    // Respect the free-tier item cap — only upload as many as fit
+    const remaining = unlimitedItems ? files.length : Math.max(0, FREE_ITEM_LIMIT - wardrobeItems.length);
+    const toUpload = files.slice(0, remaining);
+
+    if (toUpload.length < files.length) {
+      alert(
+        "Only " + toUpload.length + " of " + files.length +
+        " photos were added — that's your free trial limit. Upgrade to Closet for unlimited."
+      );
+    }
+
+    for (const file of toUpload) {
+      await addItem(file);
+    }
   });
 
   async function addItem(file) {
@@ -273,11 +286,10 @@
       ]);
       if (error) throw error;
 
-      if (itemPromptInput) itemPromptInput.value = "";
       await loadItems();
     } catch (err) {
       console.error(err);
-      alert("Couldn't add that item \u2014 try again.");
+      alert("Couldn't add one of those items \u2014 try again.");
     }
   }
 
