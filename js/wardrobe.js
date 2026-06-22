@@ -371,7 +371,8 @@
       if (!res.ok) throw new Error("Combo check failed");
       const data = await res.json();
 comboResult.style.display = "block";
-      const thumbsHtml = items
+      const selectedItems = wardrobeItems.filter((it) => selectedItemIds.has(it.id));
+      const thumbsHtml = selectedItems
         .map((it) => '<img src="' + it.image_url + '" alt="" class="combo-thumb">')
         .join("");
       comboResult.innerHTML =
