@@ -479,3 +479,20 @@ a:focus-visible, button:focus-visible, .chip:focus-visible, .svc-option:focus-vi
 /* ---------- combo result thumbnails ---------- */
 .combo-thumbs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
 .combo-thumb{width:64px;height:64px;object-fit:cover;border:1px solid var(--line);border-radius:var(--radius);}
+
+/* ---------- category nav tiles ---------- */
+.category-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);}
+.category-tile{
+  background:var(--bg);padding:22px 18px;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:background .15s ease;
+}
+.category-tile:hover{background:rgba(203,255,77,0.05);}
+.category-tile .tile-label{
+  font-family:'Space Mono',monospace;text-transform:uppercase;font-size:0.8rem;letter-spacing:0.05em;
+}
+.category-tile .tile-count{
+  font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--lime);
+}
+.category-tile.empty .tile-count{color:var(--line);}
+.category-tile.empty{opacity:0.5;}

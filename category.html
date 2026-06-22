@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Category — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html">Home</a>
+    <a href="style.html">Style My Fit</a>
+    <a href="wardrobe.html" class="active">My Closet</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:48px 0 32px;">
+  <div class="wrap">
+    <a href="wardrobe.html" class="tag" style="color:var(--muted);display:inline-block;margin-bottom:12px;">&#8592; Back to closet</a>
+    <h1 class="display" id="categoryTitle" style="font-size:clamp(2rem,5vw,3.2rem);"></h1>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:16px;">
+
+  <div id="buildOutfitBar" style="display:none;margin-bottom:24px;padding:18px;border:1px solid var(--line);">
+    <p class="tag" style="color:var(--muted);margin-bottom:12px;">Tap items to select for a combo check</p>
+    <div class="field" style="margin-bottom:14px;">
+      <input type="text" id="comboPromptInput" placeholder="Anything we should know? (optional)">
+    </div>
+    <div class="combo-bar" style="position:static;border:none;padding:0;">
+      <div class="day-picker" id="dayPicker">
+        <div class="day-chip" data-day="monday">Mon</div>
+        <div class="day-chip" data-day="tuesday">Tue</div>
+        <div class="day-chip" data-day="wednesday">Wed</div>
+        <div class="day-chip" data-day="thursday">Thu</div>
+        <div class="day-chip" data-day="friday">Fri</div>
+        <div class="day-chip" data-day="saturday">Sat</div>
+        <div class="day-chip" data-day="sunday">Sun</div>
+      </div>
+      <button class="btn btn-solid" id="comboCheckBtn" disabled>Check combo &#8594;</button>
+    </div>
+  </div>
+
+  <div id="comboResult" style="display:none;margin-bottom:20px;" class="result-card"></div>
+
+  <div class="item-grid" id="categoryGrid"></div>
+
+  <div style="margin-top:24px;">
+    <button class="btn btn-solid" id="addItemsBtn" style="width:100%;">+ Add more items</button>
+  </div>
+
+  <input type="file" id="itemFileInput" accept="image/*" multiple style="display:none;">
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck &#8212; Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/config.js"></script>
+<script src="js/category.js"></script>
+</body>
+</html>

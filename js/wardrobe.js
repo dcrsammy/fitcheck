@@ -1,8 +1,7 @@
 /* =========================================================
    FITCHECK — wardrobe.js
-   Email/password auth, wardrobe items grouped by category,
-   outfit combos, day assignment, optional context prompts,
-   multi-upload. No delete on free/pro — 10-item cap is hard.
+   Landing page: auth + category tile navigation.
+   Combo builder lives in category.js (category.html).
    ========================================================= */
 
 (function () {
@@ -13,12 +12,17 @@
 
   const FREE_ITEM_LIMIT = cfg.FREE_CLOSET_ITEM_LIMIT || 10;
 
-  const CATEGORY_ORDER = [
+  const CATEGORIES = [
     { key: "top", label: "Tops" },
-    { key: "outerwear", label: "Outerwear" },
     { key: "bottom", label: "Bottoms" },
     { key: "shoes", label: "Shoes" },
+    { key: "outerwear", label: "Outerwear" },
     { key: "accessory", label: "Accessories" },
+    { key: "chain", label: "Chains" },
+    { key: "ring", label: "Rings" },
+    { key: "wristband", label: "Wristbands" },
+    { key: "bag", label: "Bags" },
+    { key: "other", label: "Other" },
   ];
 
   const authGate = document.getElementById("authGate");
@@ -36,100 +40,58 @@
   const authMsg = document.getElementById("authMsg");
   const signOutBtn = document.getElementById("signOutBtn");
   const planPill = document.getElementById("planPill");
-  const itemGrid = document.getElementById("itemGrid");
-  const itemPromptInput = document.getElementById("itemPromptInput");
+  const itemCount = document.getElementById("itemCount");
+  const categoryNav = document.getElementById("categoryNav");
   const paywallNote = document.getElementById("paywallNote");
   const itemFileInput = document.getElementById("itemFileInput");
-  const comboUnlocked = document.getElementById("comboUnlocked");
-  const comboPromptInput = document.getElementById("comboPromptInput");
-  const comboCheckBtn = document.getElementById("comboCheckBtn");
-  const comboResult = document.getElementById("comboResult");
-  const dayPicker = document.getElementById("dayPicker");
+  const addItemsBtn = document.getElementById("addItemsBtn");
+  const planMyWeekBtn = document.getElementById("planMyWeekBtn");
 
   let currentUser = null;
   let userPlan = "free";
   let unlimitedItems = false;
   let wardrobeItems = [];
-  let selectedItemIds = new Set();
-  let selectedDay = null;
+
+  /* ---------- AUTH ---------- */
 
   tabSignIn.addEventListener("click", () => {
-    tabSignIn.classList.add("active");
-    tabSignUp.classList.remove("active");
-    signInForm.style.display = "block";
-    signUpForm.style.display = "none";
+    tabSignIn.classList.add("active"); tabSignUp.classList.remove("active");
+    signInForm.style.display = "block"; signUpForm.style.display = "none";
     authMsg.style.display = "none";
   });
 
   tabSignUp.addEventListener("click", () => {
-    tabSignUp.classList.add("active");
-    tabSignIn.classList.remove("active");
-    signUpForm.style.display = "block";
-    signInForm.style.display = "none";
+    tabSignUp.classList.add("active"); tabSignIn.classList.remove("active");
+    signUpForm.style.display = "block"; signInForm.style.display = "none";
     authMsg.style.display = "none";
   });
 
   signUpBtn.addEventListener("click", async () => {
     const email = signUpEmail.value.trim();
     const password = signUpPassword.value;
-    if (!email || password.length < 6) {
-      showAuthMsg("Enter a valid email and a password of at least 6 characters.");
-      return;
-    }
-    signUpBtn.disabled = true;
-    signUpBtn.textContent = "Creating...";
-
+    if (!email || password.length < 6) { showAuthMsg("Enter a valid email and a password of at least 6 characters."); return; }
+    signUpBtn.disabled = true; signUpBtn.textContent = "Creating...";
     const { data, error } = await supabase.auth.signUp({ email, password });
-
-    signUpBtn.disabled = false;
-    signUpBtn.textContent = "Create account \u2192";
-
-    if (error) {
-      showAuthMsg(error.message || "Couldn't create that account — try again.");
-      return;
-    }
-
-    if (data.session) {
-      currentUser = data.session.user;
-      showApp();
-    } else {
-      showAuthMsg("Account created. Check your email to confirm, then sign in.");
-    }
+    signUpBtn.disabled = false; signUpBtn.textContent = "Create account \u2192";
+    if (error) { showAuthMsg(error.message || "Couldn't create that account — try again."); return; }
+    if (data.session) { currentUser = data.session.user; showApp(); }
+    else { showAuthMsg("Account created. Check your email to confirm, then sign in."); }
   });
 
   signInBtn.addEventListener("click", async () => {
     const email = signInEmail.value.trim();
     const password = signInPassword.value;
-    if (!email || !password) {
-      showAuthMsg("Enter your email and password.");
-      return;
-    }
-    signInBtn.disabled = true;
-    signInBtn.textContent = "Signing in...";
-
+    if (!email || !password) { showAuthMsg("Enter your email and password."); return; }
+    signInBtn.disabled = true; signInBtn.textContent = "Signing in...";
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    signInBtn.disabled = false;
-    signInBtn.textContent = "Sign in \u2192";
-
-    if (error) {
-      showAuthMsg(error.message || "Couldn't sign in — check your email and password.");
-      return;
-    }
-
-    currentUser = data.session.user;
-    showApp();
+    signInBtn.disabled = false; signInBtn.textContent = "Sign in \u2192";
+    if (error) { showAuthMsg(error.message || "Couldn't sign in — check your email and password."); return; }
+    currentUser = data.session.user; showApp();
   });
 
-  function showAuthMsg(text) {
-    authMsg.style.display = "block";
-    authMsg.textContent = text;
-  }
+  function showAuthMsg(text) { authMsg.style.display = "block"; authMsg.textContent = text; }
 
-  signOutBtn.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    window.location.reload();
-  });
+  signOutBtn.addEventListener("click", async () => { await supabase.auth.signOut(); window.location.reload(); });
 
   async function showApp() {
     authGate.style.display = "none";
@@ -140,165 +102,89 @@
 
   async function initAuth() {
     const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      currentUser = data.session.user;
-      await showApp();
-    } else {
-      authGate.style.display = "block";
-      closetApp.style.display = "none";
-    }
+    if (data.session) { currentUser = data.session.user; await showApp(); }
+    else { authGate.style.display = "block"; closetApp.style.display = "none"; }
   }
+
+  /* ---------- PROFILE ---------- */
 
   async function loadProfile() {
     const { data, error } = await supabase
-      .from("profiles")
-      .select("plan, plan_expires_at")
-      .eq("id", currentUser.id)
-      .single();
-
+      .from("profiles").select("plan, plan_expires_at").eq("id", currentUser.id).single();
     userPlan = "free";
     if (!error && data) {
       const notExpired = !data.plan_expires_at || new Date(data.plan_expires_at) > new Date();
       userPlan = notExpired ? (data.plan || "free") : "free";
     }
     unlimitedItems = userPlan === "closet";
-
     const planLabels = { free: "Free plan", pro: "Style Pro \u2713", closet: "Closet plan \u2713" };
     planPill.textContent = planLabels[userPlan];
     planPill.classList.toggle("active", userPlan !== "free");
-
-    comboUnlocked.style.display = "block";
+    if (unlimitedItems) planMyWeekBtn.style.display = "block";
   }
+
+  /* ---------- ITEMS + CATEGORY NAV ---------- */
 
   async function loadItems() {
     const { data, error } = await supabase
-      .from("wardrobe_items")
-      .select("*")
-      .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false });
-
+      .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
     wardrobeItems = error ? [] : data;
-    renderGrid();
+    renderCategoryNav();
   }
 
-  function buildItemCard(item) {
-    const card = document.createElement("div");
-    card.className = "item-card";
-    card.dataset.id = item.id;
-    card.innerHTML =
-      '<img src="' + item.image_url + '" alt="' + escapeHtml(item.category || "item") + '">' +
-      '<div class="item-meta">' +
-      '<div class="cat">' + escapeHtml(item.category || "") + "</div>" +
-      "</div>" +
-      '<div class="check">\u2713</div>';
-    card.addEventListener("click", () => toggleSelect(item.id, card));
-    return card;
-  }
-
-  function renderGrid() {
-    itemGrid.innerHTML = "";
+  function renderCategoryNav() {
+    categoryNav.innerHTML = "";
+    const total = wardrobeItems.length;
+    itemCount.textContent = total + "/" + (unlimitedItems ? "\u221e" : FREE_ITEM_LIMIT) + " items";
 
     const grouped = {};
     wardrobeItems.forEach((item) => {
       const cat = (item.category || "other").toLowerCase();
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(item);
+      grouped[cat] = (grouped[cat] || 0) + 1;
     });
 
-    CATEGORY_ORDER.forEach(({ key, label }) => {
-      if (!grouped[key] || !grouped[key].length) return;
-      itemGrid.appendChild(buildCategorySection(label, grouped[key]));
-      delete grouped[key];
+    CATEGORIES.forEach(({ key, label }) => {
+      const count = grouped[key] || 0;
+      const tile = document.createElement("div");
+      tile.className = "category-tile" + (count === 0 ? " empty" : "");
+      tile.innerHTML =
+        '<span class="tile-label">' + label + '</span>' +
+        '<span class="tile-count">' + count + '</span>';
+      tile.addEventListener("click", () => {
+        window.location.href = "category.html?cat=" + encodeURIComponent(key) + "&label=" + encodeURIComponent(label);
+      });
+      categoryNav.appendChild(tile);
     });
 
-    const leftoverKeys = Object.keys(grouped);
-    if (leftoverKeys.length) {
-      const leftoverItems = leftoverKeys.flatMap((k) => grouped[k]);
-      itemGrid.appendChild(buildCategorySection("Other", leftoverItems));
-    }
-
-    const atLimit = !unlimitedItems && wardrobeItems.length >= FREE_ITEM_LIMIT;
-    if (!atLimit) {
-      const addSection = document.createElement("div");
-      addSection.className = "category-section";
-      const addGrid = document.createElement("div");
-      addGrid.className = "item-grid";
-      const addCard = document.createElement("div");
-      addCard.className = "add-item-card";
-      addCard.innerHTML = "+ Add item";
-      addCard.addEventListener("click", () => itemFileInput.click());
-      addGrid.appendChild(addCard);
-      addSection.appendChild(addGrid);
-      itemGrid.appendChild(addSection);
-    }
-
+    const atLimit = !unlimitedItems && total >= FREE_ITEM_LIMIT;
     paywallNote.style.display = !unlimitedItems ? "block" : "none";
-    if (!unlimitedItems) {
-      paywallNote.innerHTML =
-        "Free trial: " + wardrobeItems.length + "/" + FREE_ITEM_LIMIT +
-        ' items used. <a href="pricing.html" style="color:var(--lime);text-decoration:underline;">Go unlimited with Closet \u2014 \u20a650,000/month.</a>';
-    }
+    paywallNote.innerHTML = !unlimitedItems
+      ? "Free trial: " + total + "/" + FREE_ITEM_LIMIT + ' used. <a href="pricing.html" style="color:var(--lime);text-decoration:underline;">Go unlimited \u2014 \u20a650,000/month.</a>'
+      : "";
+    addItemsBtn.style.display = atLimit ? "none" : "block";
   }
 
-  function buildCategorySection(label, items) {
-    const section = document.createElement("div");
-    section.className = "category-section";
-    section.innerHTML =
-      '<div class="category-label"><span>' + escapeHtml(label) + '</span><span class="count">' + items.length + "</span></div>";
-    const grid = document.createElement("div");
-    grid.className = "item-grid";
-    items.forEach((item) => grid.appendChild(buildItemCard(item)));
-    section.appendChild(grid);
-    return section;
-  }
-
-  function toggleSelect(id, card) {
-    if (selectedItemIds.has(id)) {
-      selectedItemIds.delete(id);
-      card.classList.remove("selected");
-    } else {
-      selectedItemIds.add(id);
-      card.classList.add("selected");
-    }
-    comboCheckBtn.disabled = selectedItemIds.size < 2;
-    comboResult.style.display = "none";
-  }
+  addItemsBtn.addEventListener("click", () => itemFileInput.click());
 
   itemFileInput.addEventListener("change", async (e) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     itemFileInput.value = "";
     if (!files.length) return;
-
     const remaining = unlimitedItems ? files.length : Math.max(0, FREE_ITEM_LIMIT - wardrobeItems.length);
     const toUpload = files.slice(0, remaining);
-
-    if (toUpload.length < files.length) {
-      alert(
-        "Only " + toUpload.length + " of " + files.length +
-        " photos were added — that's your free trial limit. Upgrade to Closet for unlimited."
-      );
-    }
-
-    for (const file of toUpload) {
-      await addItem(file);
-    }
+    if (toUpload.length < files.length) alert("Only " + toUpload.length + " of " + files.length + " photos added — free trial limit reached.");
+    for (const file of toUpload) await addItem(file);
+    await loadItems();
   });
 
   async function addItem(file) {
-    const note = itemPromptInput ? itemPromptInput.value.trim().slice(0, 300) : "";
-
     const reader = new FileReader();
-    const dataUrl = await new Promise((resolve) => {
-      reader.onload = (ev) => resolve(ev.target.result);
-      reader.readAsDataURL(file);
-    });
+    const dataUrl = await new Promise((resolve) => { reader.onload = (ev) => resolve(ev.target.result); reader.readAsDataURL(file); });
     const base64 = dataUrl.split(",")[1];
-
     try {
       const tagRes = await fetch("/.netlify/functions/tag-item", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, mediaType: file.type, userPrompt: note }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, mediaType: file.type }),
       });
       if (!tagRes.ok) throw new Error("Tagging failed");
       const tagData = await tagRes.json();
@@ -306,104 +192,23 @@
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", cfg.CLOUDINARY_UPLOAD_PRESET);
-      const uploadRes = await fetch(
-        "https://api.cloudinary.com/v1_1/" + cfg.CLOUDINARY_CLOUD_NAME + "/image/upload",
-        { method: "POST", body: formData }
-      );
-      if (!uploadRes.ok) throw new Error("Image upload failed");
+      const uploadRes = await fetch("https://api.cloudinary.com/v1_1/" + cfg.CLOUDINARY_CLOUD_NAME + "/image/upload", { method: "POST", body: formData });
+      if (!uploadRes.ok) throw new Error("Upload failed");
       const uploadData = await uploadRes.json();
 
-      const { error } = await supabase.from("wardrobe_items").insert([
-        {
-          user_id: currentUser.id,
-          image_url: uploadData.secure_url,
-          category: tagData.category,
-          color: tagData.color,
-          tags: tagData.tags,
-          ai_description: tagData.description,
-        },
-      ]);
+      const { error } = await supabase.from("wardrobe_items").insert([{
+        user_id: currentUser.id,
+        image_url: uploadData.secure_url,
+        category: tagData.category,
+        color: tagData.color,
+        tags: tagData.tags,
+        ai_description: tagData.description,
+      }]);
       if (error) throw error;
-
-      await loadItems();
     } catch (err) {
       console.error(err);
-      alert("Couldn't add one of those items \u2014 try again.");
+      alert("Couldn't add one item \u2014 try again.");
     }
-  }
-
-  dayPicker.addEventListener("click", (e) => {
-    const chip = e.target.closest(".day-chip");
-    if (!chip) return;
-    const wasActive = chip.classList.contains("active");
-    [...dayPicker.children].forEach((c) => c.classList.remove("active"));
-    if (!wasActive) {
-      chip.classList.add("active");
-      selectedDay = chip.dataset.day;
-    } else {
-      selectedDay = null;
-    }
-  });
-
-  comboCheckBtn.addEventListener("click", async () => {
-    const items = wardrobeItems.filter((it) => selectedItemIds.has(it.id));
-    if (items.length < 2) return;
-
-    const note = comboPromptInput ? comboPromptInput.value.trim().slice(0, 300) : "";
-
-    comboCheckBtn.disabled = true;
-    comboCheckBtn.textContent = "Checking...";
-
-    try {
-      const res = await fetch("/.netlify/functions/combo-verdict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((it) => ({
-            category: it.category,
-            color: it.color,
-            tags: it.tags,
-            description: it.ai_description,
-          })),
-          userPrompt: note,
-        }),
-      });
-      if (!res.ok) throw new Error("Combo check failed");
-      const data = await res.json();
-comboResult.style.display = "block";
-      const selectedItems = wardrobeItems.filter((it) => selectedItemIds.has(it.id));
-      const thumbsHtml = selectedItems
-        .map((it) => '<img src="' + it.image_url + '" alt="" class="combo-thumb">')
-        .join("");
-      comboResult.innerHTML =
-        '<div class="combo-thumbs">' + thumbsHtml + "</div>" +
-        "<h4>" + escapeHtml((data.rating || "").toUpperCase()) + "</h4>" +
-        "<p>" + escapeHtml(data.verdict || "") + "</p>" +
-        (data.tweak ? '<p style="color:var(--lime);">' + escapeHtml(data.tweak) + "</p>" : "");
-      
-      await supabase.from("outfits").insert([
-        {
-          user_id: currentUser.id,
-          item_ids: [...selectedItemIds],
-          assigned_day: selectedDay,
-          ai_verdict: data.verdict,
-        },
-      ]);
-
-      if (comboPromptInput) comboPromptInput.value = "";
-    } catch (err) {
-      console.error(err);
-      alert("Couldn't check that combo \u2014 try again.");
-    } finally {
-      comboCheckBtn.disabled = false;
-      comboCheckBtn.textContent = "Check this combo \u2192";
-    }
-  });
-
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str || "";
-    return div.innerHTML;
   }
 
   initAuth();

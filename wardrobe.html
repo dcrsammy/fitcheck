@@ -23,15 +23,15 @@
   </div>
 </nav>
 
-<header class="hero" style="padding:64px 0 48px;">
+<header class="hero" style="padding:48px 0 32px;">
   <div class="wrap">
     <span class="tag" style="color:var(--lime)">// my closet</span>
-    <h1 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem);">Build the <span class="accent">closet.</span></h1>
-    <p class="lede">Snap every piece you own. We'll help you combine them — and you decide what's on for Monday. First 10 items are free to try.</p>
+    <h1 class="display" style="font-size:clamp(2rem,5vw,3.2rem);">Build the <span class="accent">closet.</span></h1>
+    <p class="lede">First 10 items free. Tap a category to browse or add pieces.</p>
   </div>
 </header>
 
-<section class="wrap" style="padding-top:24px;">
+<section class="wrap" style="padding-top:16px;">
 
   <div id="authGate" style="display:none;">
     <div class="auth-shell">
@@ -39,7 +39,6 @@
         <button class="price-chip active" id="tabSignIn" type="button">Sign in</button>
         <button class="price-chip" id="tabSignUp" type="button">Create account</button>
       </div>
-
       <div id="signInForm">
         <h2>Welcome back</h2>
         <p>Sign in to your closet.</p>
@@ -47,7 +46,6 @@
         <input type="password" id="signInPassword" placeholder="Password" autocomplete="current-password">
         <button class="btn btn-solid" id="signInBtn" style="width:100%;">Sign in &#8594;</button>
       </div>
-
       <div id="signUpForm" style="display:none;">
         <h2>Create your closet</h2>
         <p>One account, no link to chase.</p>
@@ -55,7 +53,6 @@
         <input type="password" id="signUpPassword" placeholder="Password (min 6 characters)" autocomplete="new-password">
         <button class="btn btn-solid" id="signUpBtn" style="width:100%;">Create account &#8594;</button>
       </div>
-
       <div class="auth-msg" id="authMsg" style="display:none;"></div>
     </div>
   </div>
@@ -64,42 +61,23 @@
 
     <div class="wardrobe-header">
       <span class="plan-pill" id="planPill">Free plan</span>
-      <button class="btn" id="signOutBtn">Sign out</button>
-    </div>
-
-    <div class="field" style="max-width:480px;margin-bottom:18px;">
-      <label for="itemPromptInput">Note for the next item you add (optional)</label>
-      <input type="text" id="itemPromptInput" placeholder="e.g. 'this is for the rainy season' or 'not sure what this goes with'">
-    </div>
-
-    <div class="closet-sections" id="itemGrid"></div>
-
-    <div id="paywallNote" style="display:none;" class="tag" style="color:var(--muted);margin-bottom:20px;display:block;"></div>
-
-    <div class="section-head" style="margin-top:8px;">
-      <h2 style="font-size:1.5rem;">Build an outfit</h2>
-      <span class="tag" style="color:var(--muted)">tap items to select</span>
-    </div>
-
-    <div id="comboUnlocked" style="display:none;">
-      <div class="field" style="max-width:480px;">
-        <label for="comboPromptInput">Anything we should know about this combo? (optional)</label>
-        <input type="text" id="comboPromptInput" placeholder="e.g. 'is this too much for a Tuesday?'">
-      </div>
-      <div id="comboResult" style="display:none;margin-bottom:20px;" class="result-card"></div>
-      <div class="combo-bar">
-        <div class="day-picker" id="dayPicker">
-          <div class="day-chip" data-day="monday">Mon</div>
-          <div class="day-chip" data-day="tuesday">Tue</div>
-          <div class="day-chip" data-day="wednesday">Wed</div>
-          <div class="day-chip" data-day="thursday">Thu</div>
-          <div class="day-chip" data-day="friday">Fri</div>
-          <div class="day-chip" data-day="saturday">Sat</div>
-          <div class="day-chip" data-day="sunday">Sun</div>
-        </div>
-        <button class="btn btn-solid" id="comboCheckBtn" disabled>Check this combo &#8594;</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag" id="itemCount" style="color:var(--muted);"></span>
+        <button class="btn" id="signOutBtn">Sign out</button>
       </div>
     </div>
+
+    <div id="planMyWeekBtn" style="display:none;margin-bottom:24px;">
+      <a href="plan.html" class="btn btn-lime" style="width:100%;display:block;text-align:center;">Plan my week &#8594;</a>
+    </div>
+
+    <div class="category-nav" id="categoryNav"></div>
+
+    <div style="margin-top:24px;">
+      <button class="btn btn-solid" id="addItemsBtn" style="width:100%;">+ Add items to closet</button>
+    </div>
+
+    <div id="paywallNote" style="display:none;margin-top:14px;" class="tag"></div>
 
     <input type="file" id="itemFileInput" accept="image/*" multiple style="display:none;">
   </div>
