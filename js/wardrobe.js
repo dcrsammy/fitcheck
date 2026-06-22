@@ -1,7 +1,8 @@
+cat > js/category.js << 'EOF'
 /* =========================================================
-   FITCHECK — wardrobe.js
-   Landing page: auth + category tile navigation.
-   Combo builder lives in category.js (category.html).
+   FITCHECK — category.js
+   Single category grid page with item selection + combo check.
+   Cross-page outfit builder using sessionStorage.
    ========================================================= */
 
 (function () {
@@ -10,100 +11,69 @@
   const cfg = window.FITCHECK_CONFIG;
   const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 
-  const FREE_ITEM_LIMIT = cfg.FREE_CLOSET_ITEM_LIMIT || 10;
+  const params = new URLSearchParams(window.location.search);
+  const catKey = params.get("cat") || "top";
+  const catLabel = params.get("label") || "Items";
 
-  const CATEGORIES = [
-    { key: "top", label: "Tops" },
-    { key: "bottom", label: "Bottoms" },
-    { key: "shoes", label: "Shoes" },
-    { key: "outerwear", label: "Outerwear" },
-    { key: "accessory", label: "Accessories" },
-    { key: "chain", label: "Chains" },
-    { key: "ring", label: "Rings" },
-    { key: "wristband", label: "Wristbands" },
-    { key: "bag", label: "Bags" },
-    { key: "other", label: "Other" },
-  ];
+  document.getElementById("categoryTitle").textContent = catLabel;
+  document.title = catLabel + " \u2014 FitCheck";
 
-  const authGate = document.getElementById("authGate");
-  const closetApp = document.getElementById("closetApp");
-  const tabSignIn = document.getElementById("tabSignIn");
-  const tabSignUp = document.getElementById("tabSignUp");
-  const signInForm = document.getElementById("signInForm");
-  const signUpForm = document.getElementById("signUpForm");
-  const signInEmail = document.getElementById("signInEmail");
-  const signInPassword = document.getElementById("signInPassword");
-  const signInBtn = document.getElementById("signInBtn");
-  const signUpEmail = document.getElementById("signUpEmail");
-  const signUpPassword = document.getElementById("signUpPassword");
-  const signUpBtn = document.getElementById("signUpBtn");
-  const authMsg = document.getElementById("authMsg");
-  const signOutBtn = document.getElementById("signOutBtn");
-  const planPill = document.getElementById("planPill");
-  const itemCount = document.getElementById("itemCount");
-  const categoryNav = document.getElementById("categoryNav");
-  const paywallNote = document.getElementById("paywallNote");
+  const categoryGrid = document.getElementById("categoryGrid");
+  const buildOutfitBar = document.getElementById("buildOutfitBar");
+  const comboCheckBtn = document.getElementById("comboCheckBtn");
+  const comboResult = document.getElementById("comboResult");
+  const comboPromptInput = document.getElementById("comboPromptInput");
+  const dayPicker = document.getElementById("dayPicker");
   const itemFileInput = document.getElementById("itemFileInput");
   const addItemsBtn = document.getElementById("addItemsBtn");
-  const planMyWeekBtn = document.getElementById("planMyWeekBtn");
 
   let currentUser = null;
   let userPlan = "free";
   let unlimitedItems = false;
-  let wardrobeItems = [];
+  let categoryItems = [];
+  let allItems = [];
+  let selectedItemIds = new Set();
+  let selectedDay = null;
+
+  /* ---------- OUTFIT SESSION STORAGE ---------- */
+  // Persists selected item IDs across category page navigations
+
+  function getOutfitCart() {
+    try {
+      return JSON.parse(sessionStorage.getItem("fitcheck_outfit") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveOutfitCart(ids) {
+    sessionStorage.setItem("fitcheck_outfit", JSON.stringify([...ids]));
+  }
+
+  function clearOutfitCart() {
+    sessionStorage.removeItem("fitcheck_outfit");
+  }
 
   /* ---------- AUTH ---------- */
 
-  tabSignIn.addEventListener("click", () => {
-    tabSignIn.classList.add("active"); tabSignUp.classList.remove("active");
-    signInForm.style.display = "block"; signUpForm.style.display = "none";
-    authMsg.style.display = "none";
-  });
-
-  tabSignUp.addEventListener("click", () => {
-    tabSignUp.classList.add("active"); tabSignIn.classList.remove("active");
-    signUpForm.style.display = "block"; signInForm.style.display = "none";
-    authMsg.style.display = "none";
-  });
-
-  signUpBtn.addEventListener("click", async () => {
-    const email = signUpEmail.value.trim();
-    const password = signUpPassword.value;
-    if (!email || password.length < 6) { showAuthMsg("Enter a valid email and a password of at least 6 characters."); return; }
-    signUpBtn.disabled = true; signUpBtn.textContent = "Creating...";
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    signUpBtn.disabled = false; signUpBtn.textContent = "Create account \u2192";
-    if (error) { showAuthMsg(error.message || "Couldn't create that account — try again."); return; }
-    if (data.session) { currentUser = data.session.user; showApp(); }
-    else { showAuthMsg("Account created. Check your email to confirm, then sign in."); }
-  });
-
-  signInBtn.addEventListener("click", async () => {
-    const email = signInEmail.value.trim();
-    const password = signInPassword.value;
-    if (!email || !password) { showAuthMsg("Enter your email and password."); return; }
-    signInBtn.disabled = true; signInBtn.textContent = "Signing in...";
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    signInBtn.disabled = false; signInBtn.textContent = "Sign in \u2192";
-    if (error) { showAuthMsg(error.message || "Couldn't sign in — check your email and password."); return; }
-    currentUser = data.session.user; showApp();
-  });
-
-  function showAuthMsg(text) { authMsg.style.display = "block"; authMsg.textContent = text; }
-
-  signOutBtn.addEventListener("click", async () => { await supabase.auth.signOut(); window.location.reload(); });
-
-  async function showApp() {
-    authGate.style.display = "none";
-    closetApp.style.display = "block";
-    await loadProfile();
-    await loadItems();
-  }
-
-  async function initAuth() {
+  async function init() {
     const { data } = await supabase.auth.getSession();
-    if (data.session) { currentUser = data.session.user; await showApp(); }
-    else { authGate.style.display = "block"; closetApp.style.display = "none"; }
+    if (data.session) {
+      currentUser = data.session.user;
+      await loadProfile();
+      await loadItems();
+      return;
+    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        subscription.unsubscribe();
+        if (!session) { window.location.href = "wardrobe.html"; return; }
+        currentUser = session.user;
+        await loadProfile();
+        await loadItems();
+      }
+    );
+    setTimeout(() => { window.location.href = "wardrobe.html"; }, 3000);
   }
 
   /* ---------- PROFILE ---------- */
@@ -117,52 +87,140 @@
       userPlan = notExpired ? (data.plan || "free") : "free";
     }
     unlimitedItems = userPlan === "closet";
-    const planLabels = { free: "Free plan", pro: "Style Pro \u2713", closet: "Closet plan \u2713" };
-    planPill.textContent = planLabels[userPlan];
-    planPill.classList.toggle("active", userPlan !== "free");
-    if (unlimitedItems) planMyWeekBtn.style.display = "block";
+    if (unlimitedItems) buildOutfitBar.style.display = "block";
   }
 
-  /* ---------- ITEMS + CATEGORY NAV ---------- */
+  /* ---------- ITEMS ---------- */
 
   async function loadItems() {
     const { data, error } = await supabase
-      .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
-    wardrobeItems = error ? [] : data;
-    renderCategoryNav();
+      .from("wardrobe_items").select("*").eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false });
+    allItems = error ? [] : data;
+    categoryItems = allItems.filter((it) => (it.category || "other").toLowerCase() === catKey);
+
+    // Restore selections from session storage
+    const saved = getOutfitCart();
+    selectedItemIds = new Set(saved);
+
+    renderGrid();
+    updateOutfitBar();
   }
 
-  function renderCategoryNav() {
-    categoryNav.innerHTML = "";
-    const total = wardrobeItems.length;
-    itemCount.textContent = total + "/" + (unlimitedItems ? "\u221e" : FREE_ITEM_LIMIT) + " items";
-
-    const grouped = {};
-    wardrobeItems.forEach((item) => {
-      const cat = (item.category || "other").toLowerCase();
-      grouped[cat] = (grouped[cat] || 0) + 1;
+  function renderGrid() {
+    categoryGrid.innerHTML = "";
+    if (!categoryItems.length) {
+      categoryGrid.innerHTML = '<p style="color:var(--muted);padding:24px 0;">No items in this category yet. Add some below.</p>';
+      return;
+    }
+    categoryItems.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "item-card" + (selectedItemIds.has(item.id) ? " selected" : "");
+      card.dataset.id = item.id;
+      card.innerHTML =
+        '<img src="' + item.image_url + '" alt="' + escapeHtml(item.category || "item") + '">' +
+        '<div class="item-meta"><div class="cat">' + escapeHtml(item.category || "") + "</div></div>" +
+        '<div class="check">\u2713</div>';
+      card.addEventListener("click", () => toggleSelect(item.id, card));
+      categoryGrid.appendChild(card);
     });
+  }
 
-    CATEGORIES.forEach(({ key, label }) => {
-      const count = grouped[key] || 0;
-      const tile = document.createElement("div");
-      tile.className = "category-tile" + (count === 0 ? " empty" : "");
-      tile.innerHTML =
-        '<span class="tile-label">' + label + '</span>' +
-        '<span class="tile-count">' + count + '</span>';
-      tile.addEventListener("click", () => {
-        window.location.href = "category.html?cat=" + encodeURIComponent(key) + "&label=" + encodeURIComponent(label);
+  function toggleSelect(id, card) {
+    if (selectedItemIds.has(id)) {
+      selectedItemIds.delete(id);
+      card.classList.remove("selected");
+    } else {
+      selectedItemIds.add(id);
+      card.classList.add("selected");
+    }
+    saveOutfitCart(selectedItemIds);
+    updateOutfitBar();
+  }
+
+  function updateOutfitBar() {
+    if (!unlimitedItems) return;
+    const total = selectedItemIds.size;
+    comboCheckBtn.disabled = total < 2;
+    comboCheckBtn.textContent = total > 0
+      ? "Check combo (" + total + " items) \u2192"
+      : "Check combo \u2192";
+  }
+
+  /* ---------- DAY PICKER ---------- */
+
+  dayPicker.addEventListener("click", (e) => {
+    const chip = e.target.closest(".day-chip");
+    if (!chip) return;
+    const wasActive = chip.classList.contains("active");
+    [...dayPicker.children].forEach((c) => c.classList.remove("active"));
+    if (!wasActive) { chip.classList.add("active"); selectedDay = chip.dataset.day; }
+    else { selectedDay = null; }
+  });
+
+  /* ---------- COMBO CHECK ---------- */
+
+  comboCheckBtn.addEventListener("click", async () => {
+    const selectedItems = allItems.filter((it) => selectedItemIds.has(it.id));
+    if (selectedItems.length < 2) return;
+    const note = comboPromptInput ? comboPromptInput.value.trim().slice(0, 300) : "";
+    comboCheckBtn.disabled = true;
+    comboCheckBtn.textContent = "Checking...";
+
+    try {
+      const res = await fetch("/.netlify/functions/combo-verdict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: selectedItems.map((it) => ({
+            category: it.category,
+            color: it.color,
+            tags: it.tags,
+            description: it.ai_description,
+          })),
+          userPrompt: note,
+        }),
       });
-      categoryNav.appendChild(tile);
-    });
+      if (!res.ok) throw new Error("Combo check failed");
+      const data = await res.json();
 
-    const atLimit = !unlimitedItems && total >= FREE_ITEM_LIMIT;
-    paywallNote.style.display = !unlimitedItems ? "block" : "none";
-    paywallNote.innerHTML = !unlimitedItems
-      ? "Free trial: " + total + "/" + FREE_ITEM_LIMIT + ' used. <a href="pricing.html" style="color:var(--lime);text-decoration:underline;">Go unlimited \u2014 \u20a650,000/month.</a>'
-      : "";
-    addItemsBtn.style.display = atLimit ? "none" : "block";
-  }
+      const thumbsHtml = selectedItems
+        .map((it) => '<img src="' + it.image_url + '" alt="" class="combo-thumb">').join("");
+
+      comboResult.style.display = "block";
+      comboResult.innerHTML =
+        '<div class="combo-thumbs">' + thumbsHtml + "</div>" +
+        "<h4>" + escapeHtml((data.rating || "").toUpperCase()) + "</h4>" +
+        "<p>" + escapeHtml(data.verdict || "") + "</p>" +
+        (data.tweak ? '<p style="color:var(--lime);">' + escapeHtml(data.tweak) + "</p>" : "") +
+        '<button class="btn" id="clearOutfitBtn" style="margin-top:16px;">Clear outfit &amp; start again</button>';
+
+      document.getElementById("clearOutfitBtn").addEventListener("click", () => {
+        clearOutfitCart();
+        selectedItemIds.clear();
+        comboResult.style.display = "none";
+        renderGrid();
+        updateOutfitBar();
+      });
+
+      await supabase.from("outfits").insert([{
+        user_id: currentUser.id,
+        item_ids: [...selectedItemIds],
+        assigned_day: selectedDay,
+        ai_verdict: data.verdict,
+      }]);
+
+      if (comboPromptInput) comboPromptInput.value = "";
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't check that combo \u2014 try again.");
+    } finally {
+      comboCheckBtn.disabled = false;
+      updateOutfitBar();
+    }
+  });
+
+  /* ---------- ADD ITEMS ---------- */
 
   addItemsBtn.addEventListener("click", () => itemFileInput.click());
 
@@ -170,16 +228,20 @@
     const files = e.target.files ? Array.from(e.target.files) : [];
     itemFileInput.value = "";
     if (!files.length) return;
-    const remaining = unlimitedItems ? files.length : Math.max(0, FREE_ITEM_LIMIT - wardrobeItems.length);
+    const FREE_ITEM_LIMIT = cfg.FREE_CLOSET_ITEM_LIMIT || 10;
+    const remaining = unlimitedItems ? files.length : Math.max(0, FREE_ITEM_LIMIT - allItems.length);
     const toUpload = files.slice(0, remaining);
-    if (toUpload.length < files.length) alert("Only " + toUpload.length + " of " + files.length + " photos added — free trial limit reached.");
+    if (toUpload.length < files.length) alert("Free trial limit reached \u2014 upgrade to Closet for unlimited.");
     for (const file of toUpload) await addItem(file);
     await loadItems();
   });
 
   async function addItem(file) {
     const reader = new FileReader();
-    const dataUrl = await new Promise((resolve) => { reader.onload = (ev) => resolve(ev.target.result); reader.readAsDataURL(file); });
+    const dataUrl = await new Promise((resolve) => {
+      reader.onload = (ev) => resolve(ev.target.result);
+      reader.readAsDataURL(file);
+    });
     const base64 = dataUrl.split(",")[1];
     try {
       const tagRes = await fetch("/.netlify/functions/tag-item", {
@@ -192,7 +254,10 @@
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", cfg.CLOUDINARY_UPLOAD_PRESET);
-      const uploadRes = await fetch("https://api.cloudinary.com/v1_1/" + cfg.CLOUDINARY_CLOUD_NAME + "/image/upload", { method: "POST", body: formData });
+      const uploadRes = await fetch(
+        "https://api.cloudinary.com/v1_1/" + cfg.CLOUDINARY_CLOUD_NAME + "/image/upload",
+        { method: "POST", body: formData }
+      );
       if (!uploadRes.ok) throw new Error("Upload failed");
       const uploadData = await uploadRes.json();
 
@@ -211,5 +276,13 @@
     }
   }
 
-  initAuth();
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  init();
 })();
+EOF
+echo "category.js done"

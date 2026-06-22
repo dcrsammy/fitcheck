@@ -35,7 +35,7 @@
 
   async function init() {
     const { data } = await supabase.auth.getSession();
-    if (!data.session) { window.location.href = "wardrobe.html"; return; }
+    if (!data.session) { window.location.href = "wardrobe.html?signin=1"; return; }
     currentUser = data.session.user;
     await loadProfile();
     await loadItems();
