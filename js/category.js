@@ -34,11 +34,24 @@
   let selectedDay = null;
 
   async function init() {
+  async function init() {
     const { data } = await supabase.auth.getSession();
-    if (!data.session) { window.location.href = "wardrobe.html?signin=1"; return; }
-    currentUser = data.session.user;
-    await loadProfile();
-    await loadItems();
+    if (data.session) {
+      currentUser = data.session.user;
+      await loadProfile();
+      await loadItems();
+      return;
+    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        subscription.unsubscribe();
+        if (!session) { window.location.href = "wardrobe.html"; return; }
+        currentUser = session.user;
+        await loadProfile();
+        await loadItems();
+      }
+    );
+    setTimeout(() => { window.location.href = "wardrobe.html"; }, 3000);
   }
 
   async function loadProfile() {
