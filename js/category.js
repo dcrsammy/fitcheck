@@ -58,7 +58,14 @@
       .from("wardrobe_items").select("*").eq("user_id", currentUser.id).order("created_at", { ascending: false });
     allItems = error ? [] : data;
     categoryItems = allItems.filter((it) => (it.category || "other").toLowerCase() === catKey);
+    const saved = getOutfitCart();
+    selectedItemIds = new Set(saved);
     renderGrid();
+    const _bar = document.getElementById("outfitBar");
+    const _count = document.getElementById("outfitBarCount");
+    const _total = selectedItemIds.size;
+    if (_total > 0) { _bar.style.display = "flex"; _count.textContent = _total + " item" + (_total === 1 ? "" : "s") + " in outfit"; }
+    else { _bar.style.display = "none"; }
   }
 
   function renderGrid() {
@@ -83,6 +90,7 @@
   function toggleSelect(id, card) {
     if (selectedItemIds.has(id)) { selectedItemIds.delete(id); card.classList.remove("selected"); }
     else { selectedItemIds.add(id); card.classList.add("selected"); }
+    saveOutfitCart(selectedItemIds);
     comboCheckBtn.disabled = selectedItemIds.size < 2;
     const outfitBar = document.getElementById("outfitBar");
     const outfitBarCount = document.getElementById("outfitBarCount");
