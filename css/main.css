@@ -491,7 +491,7 @@ a:focus-visible, button:focus-visible, .chip:focus-visible, .svc-option:focus-vi
 .category-tile .tile-label{
   font-family:'Space Mono',monospace;text-transform:uppercase;font-size:0.8rem;letter-spacing:0.05em;
 }
-.category-tile .tile-count{
+.category-tile .tile-count{font-weight:700;font-size:0.9rem;
   font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--lime);
 }
 .category-tile.empty .tile-count{color:var(--line);}

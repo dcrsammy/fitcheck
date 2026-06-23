@@ -151,7 +151,6 @@
       .eq("user_id", currentUser.id);
     wardrobeItems = error ? [] : data;
     renderCategoryNav();
-    console.log("wardrobeItems loaded:", wardrobeItems.length, wardrobeItems.map(function(i){return i.category;}));
   }
 
   function renderCategoryNav() {
