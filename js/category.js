@@ -84,9 +84,76 @@
     if (selectedItemIds.has(id)) { selectedItemIds.delete(id); card.classList.remove("selected"); }
     else { selectedItemIds.add(id); card.classList.add("selected"); }
     comboCheckBtn.disabled = selectedItemIds.size < 2;
+    const outfitBar = document.getElementById("outfitBar");
+    const outfitBarCount = document.getElementById("outfitBarCount");
+    const outfitCheckBtn2 = document.getElementById("outfitCheckBtn");
+    const total = selectedItemIds.size;
+    if (total > 0) {
+      outfitBar.style.display = "flex";
+      outfitBarCount.textContent = total + " item" + (total === 1 ? "" : "s") + " in outfit";
+    } else {
+      outfitBar.style.display = "none";
+    }
+    comboCheckBtn.disabled = total < 2;
     comboResult.style.display = "none";
   }
 
+  document.getElementById("outfitCheckBtn").addEventListener("click", async () => {
+    const selectedItems = allItems.filter((it) => selectedItemIds.has(it.id));
+    if (selectedItems.length < 2) {
+      alert("Select at least 2 items from your closet to check a combo.");
+      return;
+    }
+    const btn = document.getElementById("outfitCheckBtn");
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+    try {
+      const res = await fetch("/.netlify/functions/combo-verdict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: selectedItems.map((it) => ({
+            category: it.category,
+            color: it.color,
+            tags: it.tags,
+            description: it.ai_description,
+          })),
+          userPrompt: "",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      const thumbsHtml = selectedItems
+        .map((it) => '<img src="' + it.image_url + '" alt="" class="combo-thumb">').join("");
+      comboResult.style.display = "block";
+      comboResult.innerHTML =
+        '<div class="combo-thumbs">' + thumbsHtml + "</div>" +
+        "<h4>" + (data.rating || "").toUpperCase() + "</h4>" +
+        "<p>" + (data.verdict || "") + "</p>" +
+        (data.tweak ? '<p style="color:var(--lime);">' + data.tweak + "</p>" : "") +
+        '<button class="btn" id="clearOutfitBtn" style="margin-top:16px;">Clear outfit</button>';
+      comboResult.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("clearOutfitBtn").addEventListener("click", () => {
+        clearOutfitCart();
+        selectedItemIds.clear();
+        comboResult.style.display = "none";
+        renderGrid();
+        document.getElementById("outfitBar").style.display = "none";
+      });
+      await supabase.from("outfits").insert([{
+        user_id: currentUser.id,
+        item_ids: [...selectedItemIds],
+        assigned_day: selectedDay,
+        ai_verdict: data.verdict,
+      }]);
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't check that combo.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Check outfit";
+    }
+  });
   dayPicker.addEventListener("click", (e) => {
     const chip = e.target.closest(".day-chip");
     if (!chip) return;

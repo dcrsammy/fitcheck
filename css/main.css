@@ -496,3 +496,11 @@ a:focus-visible, button:focus-visible, .chip:focus-visible, .svc-option:focus-vi
 }
 .category-tile.empty .tile-count{color:var(--line);}
 .category-tile.empty{opacity:0.5;}
+
+/* ---------- sticky outfit bar ---------- */
+.outfit-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg);border-top:1px solid var(--line);
+  padding:14px 24px;display:flex;justify-content:space-between;align-items:center;
+  gap:14px;z-index:40;
+}
