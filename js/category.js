@@ -50,7 +50,7 @@
       userPlan = notExpired ? (data.plan || "free") : "free";
     }
     unlimitedItems = userPlan === "closet";
-    if (unlimitedItems) buildOutfitBar.style.display = "block";
+    buildOutfitBar.style.display = "block";
   }
 
   async function loadItems() {
@@ -73,9 +73,9 @@
       card.dataset.id = item.id;
       card.innerHTML =
         '<img src="' + item.image_url + '" alt="' + escapeHtml(item.category || "item") + '">' +
-        '<div class="item-meta"><div class="cat">' + escapeHtml(item.category || "") + "</div></div>" +
+       '<div class="item-meta"></div>' +
         '<div class="check">\u2713</div>';
-      if (unlimitedItems) card.addEventListener("click", () => toggleSelect(item.id, card));
+      card.addEventListener("click", () => toggleSelect(item.id, card));
       categoryGrid.appendChild(card);
     });
   }
