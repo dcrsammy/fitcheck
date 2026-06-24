@@ -21,6 +21,8 @@ RULES:
   date = intentional, attractive
 - If a style profile is provided, style all recommendations to match that aesthetic and gender
 - Never mention item IDs in notes
+- Keep each note to ONE short sentence maximum (under 15 words)
+- Respond with raw JSON only — no markdown, no backticks, no code fences
 
 Respond with ONLY valid JSON, no markdown, exactly this shape:
 {
@@ -67,7 +69,7 @@ exports.handler = async (event) => {
     ? `User style profile: gender=${styleProfile.gender || "unspecified"}, vibes=${(styleProfile.vibes || []).join(", ")}, dresses for=${(styleProfile.dress_occasions || []).join(", ")}. Style all outfits accordingly.\n\n`
     : "";
 
-  const userMessage = `${profileLine}Wardrobe:\n${wardrobeText}\n\nOccasions per day:\n${occasionsText}\n\nPlan the week with up to 2 outfits per day. Use exact item IDs. Never mention IDs in notes. JSON only.`;
+  const userMessage = `${profileLine}Wardrobe:\n${wardrobeText}\n\nOccasions per day:\n${occasionsText}\n\nPlan week. 2 outfits per day max. Use exact IDs. Notes max 12 words each. Raw JSON only, no backticks.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -79,7 +81,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1200,
+        max_tokens: 800,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userMessage }],
       }),
@@ -95,7 +97,8 @@ exports.handler = async (event) => {
     if (!textBlock) return { statusCode: 502, body: JSON.stringify({ error: "No response" }) };
 
     let parsed;
-    try { parsed = JSON.parse(textBlock.text.replace(/```json|```/g, "").trim()); }
+    try { const cleaned = textBlock.text.replace(/```json/gi, "").replace(/```/g, "").replace(/^\s*json\s*/i, "").trim();
+      parsed = JSON.parse(cleaned); }
     catch (e) {
       console.error("Parse failed:", textBlock.text);
       return { statusCode: 502, body: JSON.stringify({ error: "Couldn't parse plan" }) };
