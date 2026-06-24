@@ -174,7 +174,6 @@
       weekResult.appendChild(card);
     });
 
-    // Add regenerate button at the bottom
     // Bottom action row — save + regenerate
     const regenRow = document.createElement("div");
     regenRow.style.cssText = "padding:24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;";
