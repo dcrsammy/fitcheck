@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.admin-gate{max-width:400px;margin:80px auto;padding:40px;border:1px solid var(--line);}
+.admin-shell{display:none;}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:32px;}
+.stat-card{background:var(--bg);padding:24px;}
+.stat-card .stat-num{font-size:2rem;font-family:'Space Mono',monospace;color:var(--lime);}
+.stat-card .stat-label{font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-family:'Space Mono',monospace;letter-spacing:0.05em;margin-top:4px;}
+.admin-table{width:100%;border-collapse:collapse;margin-bottom:32px;}
+.admin-table th{font-family:'Space Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--lime);padding:12px 16px;border-bottom:1px solid var(--line);text-align:left;}
+.admin-table td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:0.88rem;vertical-align:top;}
+.admin-table tr:hover td{background:rgba(255,255,255,0.02);}
+.plan-badge{font-family:'Space Mono',monospace;font-size:0.68rem;text-transform:uppercase;padding:3px 8px;border:1px solid var(--line);}
+.plan-badge.closet{border-color:var(--lime);color:var(--lime);}
+.plan-badge.pro{border-color:var(--accent);color:var(--accent);}
+.plan-badge.free{color:var(--muted);}
+.status-badge{font-family:'Space Mono',monospace;font-size:0.68rem;text-transform:uppercase;padding:3px 8px;border:1px solid var(--line);}
+.status-badge.pending{border-color:var(--accent);color:var(--accent);}
+.status-badge.confirmed{border-color:var(--lime);color:var(--lime);}
+.status-badge.completed{color:var(--muted);}
+.section-head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.admin-section{margin-bottom:48px;}
+select.plan-select{background:var(--bg);border:1px solid var(--line);color:var(--paper);padding:4px 8px;font-size:0.8rem;font-family:'Space Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <span class="tag" style="color:var(--lime);margin-left:auto;padding-right:20px;">// admin</span>
+</nav>
+
+<section class="wrap" style="padding-top:48px;">
+
+  <!-- Gate -->
+  <div class="admin-gate" id="adminGate">
+    <h2 style="margin-bottom:24px;">Admin access</h2>
+    <input type="password" id="adminPass" placeholder="Password" style="margin-bottom:14px;">
+    <button class="btn btn-solid" id="adminLoginBtn" style="width:100%;">Enter &#8594;</button>
+    <p class="tag" id="adminErr" style="color:var(--accent);display:none;margin-top:12px;">Wrong password.</p>
+  </div>
+
+  <!-- App -->
+  <div class="admin-shell" id="adminShell">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+      <h1 style="font-size:1.8rem;">FitCheck Admin</h1>
+      <button class="btn" id="refreshBtn">Refresh &#8635;</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total users</div></div>
+      <div class="stat-card"><div class="stat-num" id="statCloset">—</div><div class="stat-label">Closet plan</div></div>
+      <div class="stat-card"><div class="stat-num" id="statPro">—</div><div class="stat-label">Style Pro</div></div>
+      <div class="stat-card"><div class="stat-num" id="statBookings">—</div><div class="stat-label">Total bookings</div></div>
+    </div>
+
+    <!-- Bookings -->
+    <div class="admin-section">
+      <div class="section-head-row">
+        <h2>Bookings</h2>
+        <span class="tag" style="color:var(--muted);" id="bookingCount"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table" id="bookingsTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Contact</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bookingRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="admin-section">
+      <div class="section-head-row">
+        <h2>Users</h2>
+        <span class="tag" style="color:var(--muted);" id="userCount"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table" id="usersTable">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Plan</th>
+              <th>Expires</th>
+              <th>Items</th>
+              <th>Fit checks</th>
+              <th>Change plan</th>
+            </tr>
+          </thead>
+          <tbody id="userRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck Admin &#8212; Lagos</span>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
