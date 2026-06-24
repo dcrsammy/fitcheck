@@ -135,11 +135,13 @@
             occasion: selectedOccasion,
             userPrompt: userPrompt ? userPrompt.value.trim() : "",
             styleProfile: await getStyleProfile(),
+            userId: (await (async () => { const { data } = await window.supabase.createClient(window.FITCHECK_CONFIG.SUPABASE_URL, window.FITCHECK_CONFIG.SUPABASE_ANON_KEY).auth.getSession(); return data.session ? data.session.user.id : null; })()),
           }),
         });
 
         if (!res.ok) throw new Error("Request failed");
         const data = await res.json();
+        if (data.capped) { resultLoading.style.display = "none"; resultError.style.display = "block"; errorMsg.textContent = data.message || "Monthly limit reached. Upgrade to continue."; return; }
         renderResult(data);
       } catch (err) {
         resultLoading.style.display = "none";
