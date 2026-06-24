@@ -175,10 +175,29 @@
     });
 
     // Add regenerate button at the bottom
+    // Bottom action row — save + regenerate
     const regenRow = document.createElement("div");
-    regenRow.style.cssText = "padding:24px;text-align:center;";
-    regenRow.innerHTML = '<button class="btn" id="regenBtn">Regenerate plan \u21ba</button>';
+    regenRow.style.cssText = "padding:24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;";
+    regenRow.innerHTML =
+      '<p class="tag" style="color:var(--lime);">&#10003; Plan saved automatically</p>' +
+      '<button class="btn btn-solid" id="saveAgainBtn">Save this plan &#8595;</button>' +
+      '<button class="btn" id="regenBtn">Regenerate plan &#8635;</button>';
     weekResult.appendChild(regenRow);
+
+    document.getElementById("saveAgainBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("saveAgainBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+      const { error } = await supabase.from("weekly_plans").insert([{
+        user_id: currentUser.id,
+        plan: plan,
+        occasions: occasions,
+      }]);
+      btn.disabled = false;
+      btn.textContent = error ? "Couldn't save — try again." : "Saved &#10003;";
+      setTimeout(() => { btn.textContent = "Save this plan &#8595;"; }, 3000);
+    });
+
 
     document.getElementById("regenBtn").addEventListener("click", () => {
       planBtn.click();
