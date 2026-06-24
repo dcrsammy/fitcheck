@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saved Plans — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.saved-plan-card{border:1px solid var(--line);margin-bottom:24px;padding:24px;}
+.saved-plan-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.saved-plan-date{font-family:'Space Mono',monospace;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--lime);}
+.day-row{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);}
+.day-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.day-row-label{font-family:'Space Mono',monospace;font-size:0.72rem;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.thumb-strip{display:flex;gap:6px;flex-wrap:wrap;}
+.day-thumb{width:52px;height:52px;object-fit:cover;border:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html">Home</a>
+    <a href="style.html">Style My Fit</a>
+    <a href="wardrobe.html" class="active">My Closet</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:48px 0 32px;">
+  <div class="wrap">
+    <a href="plan.html" class="tag" style="color:var(--muted);display:inline-block;margin-bottom:12px;">&#8592; Back to plan</a>
+    <span class="tag" style="color:var(--lime);display:block;">// saved plans</span>
+    <h1 class="display" style="font-size:clamp(2rem,5vw,3.2rem);">Your <span class="accent">history.</span></h1>
+    <p class="lede">Every plan you've saved, in order.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:16px;">
+  <div id="plansContainer">
+    <div class="loading-row" style="padding:32px 0;">
+      <div class="spinner"></div>
+      <span>Loading your plans...</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck &#8212; Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/config.js"></script>
+<script src="js/saved-plans.js"></script>
+</body>
+</html>

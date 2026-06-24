@@ -5,15 +5,72 @@
   const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 
   const DAYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const DAY_OCCASIONS = [
+    { value: "office", label: "Office" },
+    { value: "home", label: "Home / Lounge" },
+    { value: "casual", label: "Casual" },
+    { value: "evening", label: "Evening out" },
+    { value: "gym", label: "Gym" },
+    { value: "event", label: "Event / Owambe" },
+    { value: "date", label: "Date" },
+    { value: "none", label: "Rest day" },
+  ];
 
   const lockPanel = document.getElementById("lockPanel");
   const planApp = document.getElementById("planApp");
   const planBtn = document.getElementById("planBtn");
   const loadingState = document.getElementById("loadingState");
   const weekResult = document.getElementById("weekResult");
+  const occasionsGrid = document.getElementById("occasionsGrid");
 
   let currentUser = null;
   let wardrobeItems = [];
+  let lastGeneratedPlan = null;
+  let lastOccasions = null;
+
+  /* ---------- BUILD OCCASION SELECTORS ---------- */
+
+  function buildOccasionGrid() {
+    occasionsGrid.innerHTML = "";
+    DAYS.forEach((day) => {
+      const tile = document.createElement("div");
+      tile.className = "occasion-tile";
+
+      const optionsHtml = DAY_OCCASIONS.map((o) =>
+        '<option value="' + o.value + '">' + o.label + "</option>"
+      ).join("");
+
+      tile.innerHTML =
+        '<label>' + day.charAt(0).toUpperCase() + day.slice(1) + "</label>" +
+        '<span class="occ-label">Outfit 1</span>' +
+        '<select id="occ1-' + day + '">' + optionsHtml + "</select>" +
+        '<span class="occ-label">Outfit 2 (optional)</span>' +
+        '<select id="occ2-' + day + '"><option value="none">None</option>' + optionsHtml + "</select>";
+
+      occasionsGrid.appendChild(tile);
+    });
+
+    // Set sensible defaults
+    const defaults = {
+      monday: ["office", "home"],
+      tuesday: ["office", "home"],
+      wednesday: ["office", "home"],
+      thursday: ["office", "home"],
+      friday: ["office", "evening"],
+      saturday: ["casual", "none"],
+      sunday: ["home", "none"],
+    };
+
+    DAYS.forEach((day) => {
+      const [occ1, occ2] = defaults[day] || ["casual", "none"];
+      const sel1 = document.getElementById("occ1-" + day);
+      const sel2 = document.getElementById("occ2-" + day);
+      if (sel1) sel1.value = occ1;
+      if (sel2) sel2.value = occ2;
+    });
+  }
+
+  /* ---------- AUTH ---------- */
 
   async function init() {
     const { data } = await supabase.auth.getSession();
@@ -48,10 +105,15 @@
     }
     planApp.style.display = "block";
     lockPanel.style.display = "none";
+    buildOccasionGrid();
     await loadWardrobe();
-    await loadLastPlan();
   }
 
+  async function loadWardrobe() {
+    const { data, error } = await supabase
+      .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
+    wardrobeItems = error ? [] : data;
+  }
 
   async function getStyleProfile() {
     try {
@@ -62,43 +124,25 @@
     } catch (e) { return null; }
   }
 
-  async function loadWardrobe() {
-    const { data, error } = await supabase
-      .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
-    wardrobeItems = error ? [] : data;
-  }
-
-  async function loadLastPlan() {
-    const { data, error } = await supabase
-      .from("weekly_plans")
-      .select("*")
-      .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!error && data) {
-      renderWeek(data.plan);
-      if (data.occasions) {
-        DAYS.forEach((day) => {
-          const el = document.getElementById("occ-" + day);
-          if (el && data.occasions[day]) el.value = data.occasions[day];
-        });
-      }
-    }
-  }
+  /* ---------- GENERATE PLAN ---------- */
 
   planBtn.addEventListener("click", async () => {
     if (!wardrobeItems.length) {
       alert("Add some items to your closet first.");
       return;
     }
+
     const occasions = {};
     DAYS.forEach((day) => {
-      const el = document.getElementById("occ-" + day);
-      if (el) occasions[day] = el.value;
+      const occ1 = document.getElementById("occ1-" + day);
+      const occ2 = document.getElementById("occ2-" + day);
+      occasions[day] = {
+        outfit1: occ1 ? occ1.value : "casual",
+        outfit2: occ2 && occ2.value !== "none" ? occ2.value : null,
+      };
     });
 
+    lastOccasions = occasions;
     planBtn.disabled = true;
     planBtn.textContent = "Planning...";
     loadingState.style.display = "block";
@@ -114,6 +158,7 @@
           wardrobe: wardrobeItems.map((it) => ({
             id: it.id,
             category: it.category,
+            subcategory: it.subcategory,
             color: it.color,
             tags: it.tags,
             description: it.ai_description,
@@ -125,15 +170,8 @@
 
       if (!res.ok) throw new Error("Planning failed");
       const plan = await res.json();
-
-      // Save to Supabase
-      await supabase.from("weekly_plans").insert([{
-        user_id: currentUser.id,
-        plan: plan,
-        occasions: occasions,
-      }]);
-
-      renderWeek(plan);
+      lastGeneratedPlan = plan;
+      renderWeek(plan, occasions);
 
     } catch (err) {
       console.error(err);
@@ -145,58 +183,109 @@
     }
   });
 
-  function renderWeek(plan) {
+  /* ---------- RENDER WEEK ---------- */
+
+  function isDayPast(day) {
+    const now = new Date();
+    const todayIndex = now.getDay(); // 0=Sun, 1=Mon...
+    const dayIndex = { monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6, sunday:0 };
+    return dayIndex[day] < todayIndex || (dayIndex[day] === todayIndex && now.getHours() >= 23);
+  }
+
+  function renderWeek(plan, occasions) {
     weekResult.style.display = "block";
     weekResult.innerHTML = "";
 
     DAYS.forEach((day) => {
       const dayPlan = plan[day];
+      const past = isDayPast(day);
       const card = document.createElement("div");
 
-      if (!dayPlan || !dayPlan.items || !dayPlan.items.length) {
-        card.className = "day-card empty";
+      if (!dayPlan) {
+        card.className = "day-card empty" + (past ? " past" : "");
         card.innerHTML =
-          '<span class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) + "</span>" +
-          "<p>Not enough variety for this day — add more items.</p>";
+          '<div class="day-label">' +
+          day.charAt(0).toUpperCase() + day.slice(1) +
+          (past ? '<span class="past-tag">Done</span>' : "") +
+          "</div>" +
+          "<p>Not enough variety for this day.</p>";
       } else {
-        const itemObjs = dayPlan.items
-          .map((id) => wardrobeItems.find((it) => it.id === id))
-          .filter(Boolean);
-        const thumbs = itemObjs
-          .map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("");
-        card.className = "day-card";
-        card.innerHTML =
-          '<span class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) + "</span>" +
-          '<div class="day-thumbs">' + thumbs + "</div>" +
-          '<p class="day-note">' + escapeHtml(dayPlan.note || "") + "</p>";
+        card.className = "day-card" + (past ? " past" : "");
+        let innerHtml =
+          '<div class="day-label">' +
+          day.charAt(0).toUpperCase() + day.slice(1) +
+          (past ? '<span class="past-tag">Done</span>' : "") +
+          "</div>";
+
+        // Outfit 1
+        if (dayPlan.outfit1) {
+          const items1 = (dayPlan.outfit1.items || [])
+            .map((id) => wardrobeItems.find((it) => it.id === id))
+            .filter(Boolean);
+          const occ1Label = occasions[day] && occasions[day].outfit1 ? occasions[day].outfit1 : "Outfit 1";
+          innerHtml +=
+            '<div class="outfit-slot">' +
+            '<div class="slot-label">' + occ1Label.charAt(0).toUpperCase() + occ1Label.slice(1) + "</div>" +
+            '<div class="day-thumbs">' +
+            items1.map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("") +
+            "</div>" +
+            '<p class="day-note">' + escapeHtml(dayPlan.outfit1.note || "") + "</p>" +
+            "</div>";
+        }
+
+        // Outfit 2
+        if (dayPlan.outfit2) {
+          const items2 = (dayPlan.outfit2.items || [])
+            .map((id) => wardrobeItems.find((it) => it.id === id))
+            .filter(Boolean);
+          const occ2Label = occasions[day] && occasions[day].outfit2 ? occasions[day].outfit2 : "Outfit 2";
+          innerHtml +=
+            '<div class="outfit-slot">' +
+            '<div class="slot-label">' + occ2Label.charAt(0).toUpperCase() + occ2Label.slice(1) + "</div>" +
+            '<div class="day-thumbs">' +
+            items2.map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("") +
+            "</div>" +
+            '<p class="day-note">' + escapeHtml(dayPlan.outfit2.note || "") + "</p>" +
+            "</div>";
+        }
+
+        card.innerHTML = innerHtml;
       }
 
       weekResult.appendChild(card);
     });
 
-    // Bottom action row — save + regenerate
-    const regenRow = document.createElement("div");
-    regenRow.style.cssText = "padding:24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;";
-    regenRow.innerHTML =
-      '<p class="tag" style="color:var(--lime);">&#10003; Plan saved automatically</p>' +
-      '<button class="btn btn-solid" id="saveAgainBtn">Save this plan &#8595;</button>' +
-      '<button class="btn" id="regenBtn">Regenerate plan &#8635;</button>';
-    weekResult.appendChild(regenRow);
+    // Action row — explicit save only
+    const actionRow = document.createElement("div");
+    actionRow.className = "action-row";
+    actionRow.innerHTML =
+      '<button class="btn btn-solid" id="savePlanBtn">Save this plan &#8595;</button>' +
+      '<button class="btn" id="regenBtn">Regenerate &#8635;</button>';
+    weekResult.appendChild(actionRow);
 
-    document.getElementById("saveAgainBtn").addEventListener("click", async () => {
-      const btn = document.getElementById("saveAgainBtn");
+    document.getElementById("savePlanBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("savePlanBtn");
       btn.disabled = true;
       btn.textContent = "Saving...";
       const { error } = await supabase.from("weekly_plans").insert([{
         user_id: currentUser.id,
-        plan: plan,
-        occasions: occasions,
+        plan: lastGeneratedPlan,
+        occasions: lastOccasions,
       }]);
       btn.disabled = false;
-      btn.textContent = error ? "Couldn't save — try again." : "Saved &#10003;";
-      setTimeout(() => { btn.textContent = "Save this plan &#8595;"; }, 3000);
+      if (error) {
+        btn.textContent = "Couldn't save — try again.";
+        setTimeout(() => { btn.textContent = "Save this plan \u2193"; }, 3000);
+      } else {
+        btn.textContent = "\u2713 Saved";
+        btn.classList.add("btn-lime");
+        setTimeout(() => {
+          btn.textContent = "Save this plan \u2193";
+          btn.classList.remove("btn-lime");
+          btn.disabled = false;
+        }, 3000);
+      }
     });
-
 
     document.getElementById("regenBtn").addEventListener("click", () => {
       planBtn.click();
