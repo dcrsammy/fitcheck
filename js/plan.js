@@ -186,7 +186,12 @@
         if (result) {
           ["outfit1","outfit2"].forEach((slot) => {
             if (result[slot]) {
-              (result[slot].items || []).forEach((id) => usedIds.add(id));
+              (result[slot].items || []).forEach((id) => {
+                const item = wardrobeItems.find((it) => it.id === id);
+                if (item && item.category !== "bottom" && item.category !== "shoes") {
+                  usedIds.add(id);
+                }
+              });
             }
           });
         }
@@ -231,7 +236,12 @@
         if (result) {
           ["outfit1","outfit2"].forEach((slot) => {
             if (result[slot]) {
-              (result[slot].items || []).forEach((id) => usedIds.add(id));
+              (result[slot].items || []).forEach((id) => {
+                const item = wardrobeItems.find((it) => it.id === id);
+                if (item && item.category !== "bottom" && item.category !== "shoes") {
+                  usedIds.add(id);
+                }
+              });
             }
           });
         }
