@@ -108,6 +108,15 @@
     window.location.reload();
   });
 
+  async function checkOnboarding() {
+    const { data } = await supabase
+      .from("profiles").select("onboarded").eq("id", currentUser.id).single();
+    if (data && !data.onboarded) {
+      window.location.href = "onboarding.html";
+    }
+  }
+
+
   async function showApp() {
     authGate.style.display = "none";
     closetApp.style.display = "block";
@@ -142,6 +151,7 @@
     planPill.textContent = planLabels[userPlan];
     planPill.classList.toggle("active", userPlan !== "free");
     if (unlimitedItems) planMyWeekBtn.style.display = "block";
+    checkOnboarding();
   }
 
   async function loadItems() {

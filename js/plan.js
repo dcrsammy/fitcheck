@@ -52,6 +52,16 @@
     await loadLastPlan();
   }
 
+
+  async function getStyleProfile() {
+    try {
+      const { data } = await supabase
+        .from("profiles").select("gender, vibes, dress_occasions")
+        .eq("id", currentUser.id).single();
+      return data || null;
+    } catch (e) { return null; }
+  }
+
   async function loadWardrobe() {
     const { data, error } = await supabase
       .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
@@ -96,6 +106,7 @@
     weekResult.innerHTML = "";
 
     try {
+      const styleProfile = await getStyleProfile();
       const res = await fetch("/.netlify/functions/plan-week", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,6 +119,7 @@
             description: it.ai_description,
           })),
           occasions,
+          styleProfile,
         }),
       });
 

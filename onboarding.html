@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set Your Style — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.onboard-shell{max-width:520px;margin:0 auto;}
+.step{display:none;}
+.step.active{display:block;}
+.step-indicator{display:flex;gap:8px;margin-bottom:32px;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--line);}
+.step-dot.active{background:var(--accent);}
+.step-dot.done{background:var(--lime);}
+.vibe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
+.vibe-tile{
+  border:1px solid var(--line);padding:20px 16px;cursor:pointer;
+  transition:all .15s ease;text-align:center;
+}
+.vibe-tile:hover{border-color:var(--muted);}
+.vibe-tile.selected{border-color:var(--lime);background:rgba(203,255,77,0.06);}
+.vibe-tile .vibe-icon{font-size:1.8rem;margin-bottom:8px;}
+.vibe-tile .vibe-name{font-family:'Space Mono',monospace;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;}
+.vibe-tile .vibe-desc{font-size:0.78rem;color:var(--muted);margin-top:4px;}
+.gender-row{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+.gender-chip{
+  flex:1;min-width:120px;border:1px solid var(--line);padding:16px;
+  text-align:center;cursor:pointer;font-family:'Space Mono',monospace;
+  font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;
+  transition:all .15s ease;
+}
+.gender-chip:hover{border-color:var(--muted);}
+.gender-chip.selected{border-color:var(--lime);background:rgba(203,255,77,0.06);}
+.occ-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
+.occ-chip{
+  border:1px solid var(--line);padding:14px 12px;cursor:pointer;
+  font-family:'Space Mono',monospace;font-size:0.72rem;text-transform:uppercase;
+  letter-spacing:0.05em;transition:all .15s ease;display:flex;align-items:center;gap:8px;
+}
+.occ-chip:hover{border-color:var(--muted);}
+.occ-chip.selected{border-color:var(--lime);background:rgba(203,255,77,0.06);}
+</style>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+</nav>
+
+<header class="hero" style="padding:48px 0 32px;">
+  <div class="wrap">
+    <span class="tag" style="color:var(--lime)">// quick setup</span>
+    <h1 class="display" style="font-size:clamp(2rem,5vw,3rem);">Tell us your <span class="accent">vibe.</span></h1>
+    <p class="lede">30 seconds. So every recommendation actually fits you.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:16px;">
+  <div class="onboard-shell">
+
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot0"></div>
+      <div class="step-dot" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+    </div>
+
+    <!-- Step 1: Gender -->
+    <div class="step active" id="step0">
+      <h2 style="margin-bottom:8px;">How do you identify?</h2>
+      <p class="lede" style="margin-bottom:24px;">Helps us style recommendations correctly.</p>
+      <div class="gender-row">
+        <div class="gender-chip" data-val="men">Men</div>
+        <div class="gender-chip" data-val="women">Women</div>
+        <div class="gender-chip" data-val="nonbinary">Non-binary</div>
+        <div class="gender-chip" data-val="unspecified">Prefer not to say</div>
+      </div>
+      <button class="btn btn-solid" id="next0" style="width:100%;" disabled>Next &#8594;</button>
+    </div>
+
+    <!-- Step 2: Vibe -->
+    <div class="step" id="step1">
+      <h2 style="margin-bottom:8px;">Pick your vibe</h2>
+      <p class="lede" style="margin-bottom:24px;">Choose up to 2 that feel like you right now.</p>
+      <div class="vibe-grid">
+        <div class="vibe-tile" data-val="clean">
+          <div class="vibe-icon">&#9898;</div>
+          <div class="vibe-name">Clean / Minimal</div>
+          <div class="vibe-desc">Neutral tones, simple fits, intentional</div>
+        </div>
+        <div class="vibe-tile" data-val="streetwear">
+          <div class="vibe-icon">&#128248;</div>
+          <div class="vibe-name">Streetwear</div>
+          <div class="vibe-desc">Baggy, graphic, sneaker-driven</div>
+        </div>
+        <div class="vibe-tile" data-val="smart_casual">
+          <div class="vibe-icon">&#128084;</div>
+          <div class="vibe-name">Smart Casual</div>
+          <div class="vibe-desc">Polished but not corporate</div>
+        </div>
+        <div class="vibe-tile" data-val="old_money">
+          <div class="vibe-icon">&#129516;</div>
+          <div class="vibe-name">Old Money</div>
+          <div class="vibe-desc">Structured, tailored, understated luxury</div>
+        </div>
+        <div class="vibe-tile" data-val="y2k">
+          <div class="vibe-icon">&#11088;</div>
+          <div class="vibe-name">Y2K / Gen Z</div>
+          <div class="vibe-desc">Bold, layered, experimental</div>
+        </div>
+        <div class="vibe-tile" data-val="afro_street">
+          <div class="vibe-icon">&#127758;</div>
+          <div class="vibe-name">Afro Street</div>
+          <div class="vibe-desc">Lagos energy, cultural, confident</div>
+        </div>
+      </div>
+      <button class="btn btn-solid" id="next1" style="width:100%;" disabled>Next &#8594;</button>
+    </div>
+
+    <!-- Step 3: Occasions -->
+    <div class="step" id="step2">
+      <h2 style="margin-bottom:8px;">What do you dress for?</h2>
+      <p class="lede" style="margin-bottom:24px;">Select all that apply.</p>
+      <div class="occ-grid">
+        <div class="occ-chip" data-val="work">&#128188; Work</div>
+        <div class="occ-chip" data-val="casual">&#9728;&#65039; Everyday casual</div>
+        <div class="occ-chip" data-val="nights_out">&#127769; Nights out</div>
+        <div class="occ-chip" data-val="events">&#127881; Events / Owambe</div>
+        <div class="occ-chip" data-val="gym">&#127947; Gym / Active</div>
+        <div class="occ-chip" data-val="dates">&#10084;&#65039; Dates</div>
+      </div>
+      <button class="btn btn-solid" id="saveBtn" style="width:100%;" disabled>Save my style &#8594;</button>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck &#8212; Lagos</span>
+    <button class="tag" id="skipBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;">Skip for now</button>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/onboarding.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Style — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.profile-shell{max-width:520px;margin:0 auto;}
+.vibe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
+.vibe-tile{border:1px solid var(--line);padding:20px 16px;cursor:pointer;transition:all .15s ease;text-align:center;}
+.vibe-tile:hover{border-color:var(--muted);}
+.vibe-tile.selected{border-color:var(--lime);background:rgba(203,255,77,0.06);}
+.vibe-tile .vibe-icon{font-size:1.8rem;margin-bottom:8px;}
+.vibe-tile .vibe-name{font-family:'Space Mono',monospace;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;}
+.vibe-tile .vibe-desc{font-size:0.78rem;color:var(--muted);margin-top:4px;}
+.gender-row{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+.gender-chip{flex:1;min-width:120px;border:1px solid var(--line);padding:16px;text-align:center;cursor:pointer;font-family:'Space Mono',monospace;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;transition:all .15s ease;}
+.gender-chip:hover{border-color:var(--muted);}
+.gender-chip.selected{border-color:var(--lime);background:rgba(203,255,77,0.06);}
+.occ-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
+.occ-chip{border:1px solid var(--line);padding:14px 12px;cursor:pointer;font-family:'Space Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;transition:all .15s ease;display:flex;align-items:center;gap:8px;}
+.occ-chip:hover{border-color:var(--muted);}
+.occ-chip.selected{border-color:var(--lime);background:rgba(203,255,77,0.06);}
+.section-label{font-family:'Space Mono',monospace;text-transform:uppercase;font-size:0.72rem;letter-spacing:0.06em;color:var(--lime);margin-bottom:12px;display:block;}
+</style>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html">Home</a>
+    <a href="style.html">Style My Fit</a>
+    <a href="wardrobe.html">My Closet</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:48px 0 32px;">
+  <div class="wrap">
+    <a href="wardrobe.html" class="tag" style="color:var(--muted);display:inline-block;margin-bottom:12px;">&#8592; Back to closet</a>
+    <span class="tag" style="color:var(--lime);display:block;">// my style</span>
+    <h1 class="display" style="font-size:clamp(2rem,5vw,3rem);">Your <span class="accent">vibe.</span></h1>
+    <p class="lede">Change it whenever. Every recommendation adapts.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:16px;">
+  <div class="profile-shell">
+
+    <span class="section-label">How do you identify?</span>
+    <div class="gender-row" id="genderRow">
+      <div class="gender-chip" data-val="men">Men</div>
+      <div class="gender-chip" data-val="women">Women</div>
+      <div class="gender-chip" data-val="nonbinary">Non-binary</div>
+      <div class="gender-chip" data-val="unspecified">Prefer not to say</div>
+    </div>
+
+    <span class="section-label">Your vibe (pick up to 2)</span>
+    <div class="vibe-grid" id="vibeGrid">
+      <div class="vibe-tile" data-val="clean">
+        <div class="vibe-icon">&#9898;</div>
+        <div class="vibe-name">Clean / Minimal</div>
+        <div class="vibe-desc">Neutral tones, simple fits, intentional</div>
+      </div>
+      <div class="vibe-tile" data-val="streetwear">
+        <div class="vibe-icon">&#128248;</div>
+        <div class="vibe-name">Streetwear</div>
+        <div class="vibe-desc">Baggy, graphic, sneaker-driven</div>
+      </div>
+      <div class="vibe-tile" data-val="smart_casual">
+        <div class="vibe-icon">&#128084;</div>
+        <div class="vibe-name">Smart Casual</div>
+        <div class="vibe-desc">Polished but not corporate</div>
+      </div>
+      <div class="vibe-tile" data-val="old_money">
+        <div class="vibe-icon">&#129516;</div>
+        <div class="vibe-name">Old Money</div>
+        <div class="vibe-desc">Structured, tailored, understated luxury</div>
+      </div>
+      <div class="vibe-tile" data-val="y2k">
+        <div class="vibe-icon">&#11088;</div>
+        <div class="vibe-name">Y2K / Gen Z</div>
+        <div class="vibe-desc">Bold, layered, experimental</div>
+      </div>
+      <div class="vibe-tile" data-val="afro_street">
+        <div class="vibe-icon">&#127758;</div>
+        <div class="vibe-name">Afro Street</div>
+        <div class="vibe-desc">Lagos energy, cultural, confident</div>
+      </div>
+    </div>
+
+    <span class="section-label">What do you dress for?</span>
+    <div class="occ-grid" id="occGrid">
+      <div class="occ-chip" data-val="work">&#128188; Work</div>
+      <div class="occ-chip" data-val="casual">&#9728;&#65039; Everyday casual</div>
+      <div class="occ-chip" data-val="nights_out">&#127769; Nights out</div>
+      <div class="occ-chip" data-val="events">&#127881; Events / Owambe</div>
+      <div class="occ-chip" data-val="gym">&#127947; Gym / Active</div>
+      <div class="occ-chip" data-val="dates">&#10084;&#65039; Dates</div>
+    </div>
+
+    <button class="btn btn-solid" id="saveBtn" style="width:100%;margin-bottom:14px;">Save changes &#8594;</button>
+    <div class="auth-msg" id="saveMsg" style="display:none;text-align:center;"></div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck &#8212; Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/config.js"></script>
+<script src="js/style-profile.js"></script>
+</body>
+</html>

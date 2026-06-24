@@ -50,7 +50,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body" }) };
   }
 
-  const { wardrobe, occasions } = body;
+  const { wardrobe, occasions, styleProfile } = body;
   if (!wardrobe || !wardrobe.length) {
     return { statusCode: 400, body: JSON.stringify({ error: "No wardrobe items provided" }) };
   }
@@ -59,11 +59,12 @@ exports.handler = async (event) => {
     .map((it) => `ID: ${it.id} | ${it.category} | ${it.color} | ${it.description || ""} | tags: ${(it.tags || []).join(", ")}`)
     .join("\n");
 
+  const profileLine = styleProfile ? `User style profile: gender=${styleProfile.gender||"unspecified"}, vibes=${(styleProfile.vibes||[]).join(", ")}, occasions=${(styleProfile.dress_occasions||[]).join(", ")}. Style all outfits accordingly.\n\n` : "";
   const occasionsText = Object.entries(occasions || {})
     .map(([day, occ]) => `${day}: ${occ}`)
     .join("\n");
 
-  const userMessage = `Wardrobe:\n${wardrobeText}\n\nOccasions:\n${occasionsText}\n\nPlan the week. Use exact item IDs. Never mention IDs in notes. JSON only.`;
+  const userMessage = `${profileLine}Wardrobe:\n${wardrobeText}\n\nOccasions:\n${occasionsText}\n\nPlan the week. Use exact item IDs. Never mention IDs in notes. JSON only.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {

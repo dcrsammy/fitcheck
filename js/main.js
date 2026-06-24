@@ -106,6 +106,23 @@
       if (!currentBase64) return;
       resetResult();
       resultLoading.style.display = "block";
+
+    async function getStyleProfile() {
+      try {
+        const cfg = window.FITCHECK_CONFIG;
+        const sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+        const { data: session } = await sb.auth.getSession();
+        if (!session.session) return null;
+        const { data } = await sb.from("profiles")
+          .select("gender, vibes, dress_occasions")
+          .eq("id", session.session.user.id)
+          .single();
+        return data || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
       analyzeBtn.disabled = true;
 
       try {
@@ -117,6 +134,7 @@
             mediaType: currentMediaType,
             occasion: selectedOccasion,
             userPrompt: userPrompt ? userPrompt.value.trim() : "",
+            styleProfile: await getStyleProfile(),
           }),
         });
 

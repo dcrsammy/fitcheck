@@ -56,7 +56,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body" }) };
   }
 
-  const { image, mediaType, occasion, userPrompt } = body;
+  const { image, mediaType, occasion, userPrompt, styleProfile } = body;
   if (!image || !mediaType) {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing image" }) };
   }
@@ -71,6 +71,7 @@ exports.handler = async (event) => {
     }[occasion] || "everyday wear";
 
   const safeUserPrompt = (userPrompt || "").toString().slice(0, 500).trim();
+  const profileLine = styleProfile ? `\n\nUser style profile: gender=${styleProfile.gender || "unspecified"}, vibes=${(styleProfile.vibes||[]).join(", ")}, dresses for=${(styleProfile.dress_occasions||[]).join(", ")}. Factor this into every recommendation.` : "";
   const userPromptLine = safeUserPrompt
     ? `\n\nThe person also said: "${safeUserPrompt}" — factor this into your read directly.`
     : "";
@@ -97,7 +98,7 @@ exports.handler = async (event) => {
               },
               {
                 type: "text",
-                text: `Read this fit. The occasion is: ${occasionLabel}.${userPromptLine}\n\nRespond with the JSON shape only.`,
+                text: `Read this fit. The occasion is: ${occasionLabel}.${profileLine}${userPromptLine}\n\nRespond with the JSON shape only.`,
               },
             ],
           },
