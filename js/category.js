@@ -99,6 +99,7 @@
 
     renderGrid();
     updateOutfitBar();
+    if (window.ftcHintCategory) window.ftcHintCategory(catLabel);
   }
 
   function renderGrid() {
@@ -130,6 +131,7 @@
     }
     saveOutfitCart(selectedItemIds);
     updateOutfitBar();
+    if (window.ftcHintCategory) window.ftcHintCategory(catLabel);
     comboResult.style.display = "none";
   }
 
@@ -190,6 +192,7 @@
             comboResult.style.display = "none";
             renderGrid();
             updateOutfitBar();
+    if (window.ftcHintCategory) window.ftcHintCategory(catLabel);
           });
           await supabase.from("outfits").insert([{
             user_id: currentUser.id,
@@ -256,6 +259,7 @@
         comboResult.style.display = "none";
         renderGrid();
         updateOutfitBar();
+    if (window.ftcHintCategory) window.ftcHintCategory(catLabel);
       });
       await supabase.from("outfits").insert([{
         user_id: currentUser.id,
@@ -271,6 +275,7 @@
       comboCheckBtn.disabled = false;
       comboCheckBtn.textContent = "Check combo \u2192";
       updateOutfitBar();
+    if (window.ftcHintCategory) window.ftcHintCategory(catLabel);
     }
   });
 

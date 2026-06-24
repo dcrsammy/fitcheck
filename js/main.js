@@ -44,6 +44,7 @@
     let currentMediaType = null;
     let selectedOccasion = "everyday";
 
+    if (window.ftcHintStyle) window.ftcHintStyle();
     uploadZone.addEventListener("click", () => fileInput.click());
     uploadZone.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {

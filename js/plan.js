@@ -114,6 +114,7 @@
     planApp.style.display = "block";
     lockPanel.style.display = "none";
     buildOccasionGrid();
+    if (window.ftcHintPlan) window.ftcHintPlan();
     await loadWardrobe();
   }
 

@@ -504,3 +504,43 @@ a:focus-visible, button:focus-visible, .chip:focus-visible, .svc-option:focus-vi
   padding:14px 24px;display:flex;justify-content:space-between;align-items:center;
   gap:14px;z-index:40;
 }
+
+/* ---------- onboarding overlays ---------- */
+.ftc-overlay{
+  position:fixed;inset:0;background:rgba(12,11,8,0.92);z-index:999;
+  display:flex;align-items:flex-end;justify-content:center;padding:0 0 32px;
+}
+.ftc-overlay.center{align-items:center;}
+.ftc-sheet{
+  background:var(--bg);border:1px solid var(--line);padding:32px 24px;
+  max-width:480px;width:100%;margin:0 16px;
+}
+.ftc-sheet .ftc-tag{font-family:'Space Mono',monospace;font-size:0.72rem;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--lime);margin-bottom:12px;display:block;}
+.ftc-sheet h2{font-size:1.5rem;margin-bottom:10px;}
+.ftc-sheet p{color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.ftc-sheet .ftc-steps{list-style:none;margin:0 0 24px;padding:0;}
+.ftc-sheet .ftc-steps li{
+  padding:12px 0;border-bottom:1px solid var(--line);
+  display:flex;gap:14px;align-items:flex-start;font-size:0.9rem;
+}
+.ftc-sheet .ftc-steps li:last-child{border-bottom:none;}
+.ftc-sheet .ftc-steps li .step-num{
+  font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--lime);
+  min-width:22px;padding-top:2px;
+}
+.ftc-sheet .ftc-btn-row{display:flex;gap:10px;}
+.ftc-tooltip{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--lime);color:#0c0b08;padding:10px 18px;
+  font-family:'Space Mono',monospace;font-size:0.75rem;text-transform:uppercase;
+  letter-spacing:0.04em;z-index:998;white-space:nowrap;
+  display:flex;align-items:center;gap:12px;border-radius:2px;
+}
+.ftc-tooltip button{background:none;border:none;cursor:pointer;font-size:1rem;color:#0c0b08;}
+.ftc-progress-hint{
+  background:rgba(203,255,77,0.08);border:1px solid rgba(203,255,77,0.2);
+  padding:14px 16px;margin-bottom:20px;font-size:0.85rem;color:var(--muted);
+  display:flex;align-items:center;gap:10px;
+}
+.ftc-progress-hint .hint-icon{font-size:1.1rem;}
