@@ -179,20 +179,18 @@
       const styleProfile = await getStyleProfile();
       const usedIds = new Set();
 
-      const results = await Promise.all(
-        BATCH1.map((day) => planDay(day, lastOccasions, styleProfile, usedIds))
-      );
-
-      BATCH1.forEach((day, i) => {
-        lastGeneratedPlan[day] = results[i];
-        if (results[i]) {
+      // Plan sequentially so each day avoids items already used
+      for (const day of BATCH1) {
+        const result = await planDay(day, lastOccasions, styleProfile, usedIds);
+        lastGeneratedPlan[day] = result;
+        if (result) {
           ["outfit1","outfit2"].forEach((slot) => {
-            if (results[i][slot]) {
-              (results[i][slot].items || []).forEach((id) => usedIds.add(id));
+            if (result[slot]) {
+              (result[slot].items || []).forEach((id) => usedIds.add(id));
             }
           });
         }
-      });
+      }
 
       batch1Done = true;
       renderWeek(lastGeneratedPlan, lastOccasions, false);
@@ -226,13 +224,18 @@
         });
       });
 
-      const results = await Promise.all(
-        BATCH2.map((day) => planDay(day, lastOccasions, styleProfile, usedIds))
-      );
-
-      BATCH2.forEach((day, i) => {
-        lastGeneratedPlan[day] = results[i];
-      });
+      // Plan sequentially so each day avoids items already used
+      for (const day of BATCH2) {
+        const result = await planDay(day, lastOccasions, styleProfile, usedIds);
+        lastGeneratedPlan[day] = result;
+        if (result) {
+          ["outfit1","outfit2"].forEach((slot) => {
+            if (result[slot]) {
+              (result[slot].items || []).forEach((id) => usedIds.add(id));
+            }
+          });
+        }
+      }
 
       renderWeek(lastGeneratedPlan, lastOccasions, true);
 
