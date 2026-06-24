@@ -1,22 +1,19 @@
 // netlify/functions/plan-week.js
-//
-// Takes the user's full wardrobe metadata and occasion preferences,
-// returns 7 outfit combinations using only items from the wardrobe.
-// No images sent — only tagged metadata. Requires ANTHROPIC_API_KEY.
 
 const SYSTEM_PROMPT = `You are FitCheck, a Lagos street-style stylist.
-You are given a user's wardrobe as a list of tagged clothing items, and their occasion
+You are given a user's wardrobe as tagged clothing items and their occasion
 preferences for each day of the week.
 
-Your job is to plan complete outfits for each day using ONLY items from the wardrobe provided.
+Your job is to plan complete outfits for each day using items from the wardrobe.
 
 RULES:
-- Each item can only be used ONCE across the entire week (no repeats)
 - Every outfit must have at least a top and a bottom
-- Add shoes if available, outerwear if weather/occasion suits, accessories if available
-- If you run out of variety, plan fewer days rather than repeat items
+- Individual pieces CAN repeat across days (a person owns limited clothes)
+- But no two days should have the exact same full outfit combination
+- Add shoes if available, outerwear if occasion suits, accessories if available
 - Match color theory: complementary, analogous, or monochromatic combos work best
 - Match the occasion: work = cleaner/structured, casual = relaxed, evening = elevated
+- The "note" field must be a short human-readable styling tip — never mention item IDs
 
 Respond with ONLY valid JSON, no markdown, exactly this shape:
 {
@@ -24,18 +21,17 @@ Respond with ONLY valid JSON, no markdown, exactly this shape:
     "items": ["item_id_1", "item_id_2"],
     "note": "one short sentence about this outfit vibe"
   },
-  "tuesday": { ... },
-  "wednesday": { ... },
-  "thursday": { ... },
-  "friday": { ... },
-  "saturday": { ... },
-  "sunday": { ... }
+  "tuesday": { "items": [...], "note": "..." },
+  "wednesday": { "items": [...], "note": "..." },
+  "thursday": { "items": [...], "note": "..." },
+  "friday": { "items": [...], "note": "..." },
+  "saturday": { "items": [...], "note": "..." },
+  "sunday": { "items": [...], "note": "..." }
 }
 
-If a day cannot be planned (not enough items), set it to null:
-"sunday": null
-
-Use the exact item IDs provided in the wardrobe list. Do not invent IDs.`;
+If a day genuinely cannot be planned (missing essential category like tops or bottoms),
+set it to null. Do not mention item IDs anywhere in notes.
+Use the exact item IDs provided. Do not invent IDs.`;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -67,7 +63,7 @@ exports.handler = async (event) => {
     .map(([day, occ]) => `${day}: ${occ}`)
     .join("\n");
 
-  const userMessage = `Here is the wardrobe:\n${wardrobeText}\n\nOccasion preferences:\n${occasionsText}\n\nPlan the week. Use exact item IDs. Respond with JSON only.`;
+  const userMessage = `Wardrobe:\n${wardrobeText}\n\nOccasions:\n${occasionsText}\n\nPlan the week. Use exact item IDs. Never mention IDs in notes. JSON only.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -104,6 +100,16 @@ exports.handler = async (event) => {
       console.error("Failed to parse plan JSON:", textBlock.text);
       return { statusCode: 502, body: JSON.stringify({ error: "Couldn't parse plan" }) };
     }
+
+    // Server-side: remove any days where note leaks an ID (UUID pattern)
+    const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}/i;
+    const DAYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+    DAYS.forEach((day) => {
+      if (!parsed[day]) return;
+      if (parsed[day].note && UUID_PATTERN.test(parsed[day].note)) {
+        parsed[day].note = "A solid combo from your closet.";
+      }
+    });
 
     return {
       statusCode: 200,

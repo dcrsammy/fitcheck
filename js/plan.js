@@ -4,7 +4,7 @@
   const cfg = window.FITCHECK_CONFIG;
   const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 
-  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const DAYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
 
   const lockPanel = document.getElementById("lockPanel");
   const planApp = document.getElementById("planApp");
@@ -49,12 +49,33 @@
     planApp.style.display = "block";
     lockPanel.style.display = "none";
     await loadWardrobe();
+    await loadLastPlan();
   }
 
   async function loadWardrobe() {
     const { data, error } = await supabase
       .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
     wardrobeItems = error ? [] : data;
+  }
+
+  async function loadLastPlan() {
+    const { data, error } = await supabase
+      .from("weekly_plans")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!error && data) {
+      renderWeek(data.plan);
+      if (data.occasions) {
+        DAYS.forEach((day) => {
+          const el = document.getElementById("occ-" + day);
+          if (el && data.occasions[day]) el.value = data.occasions[day];
+        });
+      }
+    }
   }
 
   planBtn.addEventListener("click", async () => {
@@ -67,7 +88,9 @@
       const el = document.getElementById("occ-" + day);
       if (el) occasions[day] = el.value;
     });
+
     planBtn.disabled = true;
+    planBtn.textContent = "Planning...";
     loadingState.style.display = "block";
     weekResult.style.display = "none";
     weekResult.innerHTML = "";
@@ -87,43 +110,68 @@
           occasions,
         }),
       });
+
       if (!res.ok) throw new Error("Planning failed");
       const plan = await res.json();
 
-      weekResult.style.display = "block";
-      weekResult.innerHTML = "";
+      // Save to Supabase
+      await supabase.from("weekly_plans").insert([{
+        user_id: currentUser.id,
+        plan: plan,
+        occasions: occasions,
+      }]);
 
-      DAYS.forEach((day) => {
-        const dayPlan = plan[day];
-        const card = document.createElement("div");
-        if (!dayPlan || !dayPlan.items || !dayPlan.items.length) {
-          card.className = "day-card empty";
-          card.innerHTML =
-            '<span class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) + "</span>" +
-            "<p>Not enough items for this day.</p>";
-        } else {
-          const itemObjs = dayPlan.items
-            .map((id) => wardrobeItems.find((it) => it.id === id))
-            .filter(Boolean);
-          const thumbs = itemObjs
-            .map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("");
-          card.className = "day-card";
-          card.innerHTML =
-            '<span class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) + "</span>" +
-            '<div class="day-thumbs">' + thumbs + "</div>" +
-            '<p class="day-note">' + escapeHtml(dayPlan.note || "") + "</p>";
-        }
-        weekResult.appendChild(card);
-      });
+      renderWeek(plan);
 
     } catch (err) {
       console.error(err);
       alert("Couldn't plan the week — try again.");
     } finally {
       planBtn.disabled = false;
+      planBtn.textContent = "Plan my week \u2192";
       loadingState.style.display = "none";
     }
   });
+
+  function renderWeek(plan) {
+    weekResult.style.display = "block";
+    weekResult.innerHTML = "";
+
+    DAYS.forEach((day) => {
+      const dayPlan = plan[day];
+      const card = document.createElement("div");
+
+      if (!dayPlan || !dayPlan.items || !dayPlan.items.length) {
+        card.className = "day-card empty";
+        card.innerHTML =
+          '<span class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) + "</span>" +
+          "<p>Not enough variety for this day — add more items.</p>";
+      } else {
+        const itemObjs = dayPlan.items
+          .map((id) => wardrobeItems.find((it) => it.id === id))
+          .filter(Boolean);
+        const thumbs = itemObjs
+          .map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("");
+        card.className = "day-card";
+        card.innerHTML =
+          '<span class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) + "</span>" +
+          '<div class="day-thumbs">' + thumbs + "</div>" +
+          '<p class="day-note">' + escapeHtml(dayPlan.note || "") + "</p>";
+      }
+
+      weekResult.appendChild(card);
+    });
+
+    // Add regenerate button at the bottom
+    const regenRow = document.createElement("div");
+    regenRow.style.cssText = "padding:24px;text-align:center;";
+    regenRow.innerHTML = '<button class="btn" id="regenBtn">Regenerate plan \u21ba</button>';
+    weekResult.appendChild(regenRow);
+
+    document.getElementById("regenBtn").addEventListener("click", () => {
+      planBtn.click();
+    });
+  }
 
   function escapeHtml(str) {
     const div = document.createElement("div");
