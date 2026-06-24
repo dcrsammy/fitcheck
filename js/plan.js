@@ -5,6 +5,9 @@
   const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 
   const DAYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const BATCH1 = ["monday","tuesday","wednesday"];
+  const BATCH2 = ["thursday","friday","saturday","sunday"];
+
   const DAY_OCCASIONS = [
     { value: "office", label: "Office" },
     { value: "home", label: "Home / Lounge" },
@@ -25,49 +28,54 @@
 
   let currentUser = null;
   let wardrobeItems = [];
-  let lastGeneratedPlan = null;
-  let lastOccasions = null;
+  let lastGeneratedPlan = {};
+  let lastOccasions = {};
+  let batch1Done = false;
 
-  /* ---------- BUILD OCCASION SELECTORS ---------- */
+  /* ---------- BUILD OCCASION GRID ---------- */
 
   function buildOccasionGrid() {
     occasionsGrid.innerHTML = "";
     DAYS.forEach((day) => {
       const tile = document.createElement("div");
       tile.className = "occasion-tile";
-
       const optionsHtml = DAY_OCCASIONS.map((o) =>
         '<option value="' + o.value + '">' + o.label + "</option>"
       ).join("");
-
       tile.innerHTML =
         '<label>' + day.charAt(0).toUpperCase() + day.slice(1) + "</label>" +
         '<span class="occ-label">Outfit 1</span>' +
         '<select id="occ1-' + day + '">' + optionsHtml + "</select>" +
         '<span class="occ-label">Outfit 2 (optional)</span>' +
         '<select id="occ2-' + day + '"><option value="none">None</option>' + optionsHtml + "</select>";
-
       occasionsGrid.appendChild(tile);
     });
 
-    // Set sensible defaults
     const defaults = {
-      monday: ["office", "home"],
-      tuesday: ["office", "home"],
-      wednesday: ["office", "home"],
-      thursday: ["office", "home"],
-      friday: ["office", "evening"],
-      saturday: ["casual", "none"],
-      sunday: ["home", "none"],
+      monday: ["office","home"], tuesday: ["office","home"],
+      wednesday: ["office","home"], thursday: ["office","home"],
+      friday: ["office","evening"], saturday: ["casual","none"], sunday: ["home","none"],
     };
-
     DAYS.forEach((day) => {
-      const [occ1, occ2] = defaults[day] || ["casual", "none"];
-      const sel1 = document.getElementById("occ1-" + day);
-      const sel2 = document.getElementById("occ2-" + day);
-      if (sel1) sel1.value = occ1;
-      if (sel2) sel2.value = occ2;
+      const [o1, o2] = defaults[day] || ["casual","none"];
+      const s1 = document.getElementById("occ1-" + day);
+      const s2 = document.getElementById("occ2-" + day);
+      if (s1) s1.value = o1;
+      if (s2) s2.value = o2;
     });
+  }
+
+  function getOccasions() {
+    const occasions = {};
+    DAYS.forEach((day) => {
+      const s1 = document.getElementById("occ1-" + day);
+      const s2 = document.getElementById("occ2-" + day);
+      occasions[day] = {
+        outfit1: s1 ? s1.value : "casual",
+        outfit2: s2 && s2.value !== "none" ? s2.value : null,
+      };
+    });
+    return occasions;
   }
 
   /* ---------- AUTH ---------- */
@@ -110,9 +118,8 @@
   }
 
   async function loadWardrobe() {
-    const { data, error } = await supabase
-      .from("wardrobe_items").select("*").eq("user_id", currentUser.id);
-    wardrobeItems = error ? [] : data;
+    const { data } = await supabase.from("wardrobe_items").select("*").eq("user_id", currentUser.id);
+    wardrobeItems = data || [];
   }
 
   async function getStyleProfile() {
@@ -124,60 +131,75 @@
     } catch (e) { return null; }
   }
 
-  /* ---------- GENERATE PLAN ---------- */
+  /* ---------- WARDROBE PAYLOAD ---------- */
+
+  function buildPayload() {
+    return wardrobeItems.map((it) => ({
+      id: it.id,
+      category: it.category,
+      subcategory: it.subcategory,
+      color: it.color,
+    }));
+  }
+
+  /* ---------- PLAN SINGLE DAY ---------- */
+
+  async function planDay(day, occasions, styleProfile, usedItemIds) {
+    const res = await fetch("/.netlify/functions/plan-week", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        wardrobe: buildPayload(),
+        occasions: { [day]: occasions[day] },
+        styleProfile,
+        usedItemIds: [...usedItemIds],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data[day] || null;
+  }
+
+  /* ---------- GENERATE BATCH 1 (Mon-Wed) ---------- */
 
   planBtn.addEventListener("click", async () => {
-    if (!wardrobeItems.length) {
-      alert("Add some items to your closet first.");
-      return;
-    }
+    if (!wardrobeItems.length) { alert("Add some items to your closet first."); return; }
 
-    const occasions = {};
-    DAYS.forEach((day) => {
-      const occ1 = document.getElementById("occ1-" + day);
-      const occ2 = document.getElementById("occ2-" + day);
-      occasions[day] = {
-        outfit1: occ1 ? occ1.value : "casual",
-        outfit2: occ2 && occ2.value !== "none" ? occ2.value : null,
-      };
-    });
+    lastOccasions = getOccasions();
+    lastGeneratedPlan = {};
+    batch1Done = false;
 
-    lastOccasions = occasions;
     planBtn.disabled = true;
-    planBtn.textContent = "Planning...";
+    planBtn.textContent = "Planning Mon-Wed...";
     loadingState.style.display = "block";
     weekResult.style.display = "none";
     weekResult.innerHTML = "";
 
     try {
       const styleProfile = await getStyleProfile();
-      const wardrobePayload = wardrobeItems.map((it) => ({
-        id: it.id, category: it.category, subcategory: it.subcategory, color: it.color,
-      }));
+      const usedIds = new Set();
 
-      // One call per day in parallel — each stays well under 10s limit
-      const dayResults = await Promise.all(
-        DAYS.map((day) =>
-          fetch("/.netlify/functions/plan-week", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              wardrobe: wardrobePayload,
-              occasions: { [day]: occasions[day] },
-              styleProfile,
-            }),
-          }).then((r) => r.ok ? r.json() : null)
-        )
+      const results = await Promise.all(
+        BATCH1.map((day) => planDay(day, lastOccasions, styleProfile, usedIds))
       );
 
-      const plan = {};
-      DAYS.forEach((day, i) => { plan[day] = dayResults[i]; });
-      lastGeneratedPlan = plan;
-      renderWeek(plan, occasions);
+      BATCH1.forEach((day, i) => {
+        lastGeneratedPlan[day] = results[i];
+        if (results[i]) {
+          ["outfit1","outfit2"].forEach((slot) => {
+            if (results[i][slot]) {
+              (results[i][slot].items || []).forEach((id) => usedIds.add(id));
+            }
+          });
+        }
+      });
+
+      batch1Done = true;
+      renderWeek(lastGeneratedPlan, lastOccasions, false);
 
     } catch (err) {
       console.error(err);
-      alert("Couldn't plan the week — try again.");
+      alert("Couldn't plan Mon-Wed — try again.");
     } finally {
       planBtn.disabled = false;
       planBtn.textContent = "Plan my week \u2192";
@@ -185,85 +207,87 @@
     }
   });
 
-  /* ---------- RENDER WEEK ---------- */
+  /* ---------- GENERATE BATCH 2 (Thu-Sun) ---------- */
+
+  async function planBatch2() {
+    const btn = document.getElementById("planRestBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "Planning Thu-Sun..."; }
+
+    try {
+      const styleProfile = await getStyleProfile();
+
+      // Collect items already used in batch 1
+      const usedIds = new Set();
+      BATCH1.forEach((day) => {
+        const dayPlan = lastGeneratedPlan[day];
+        if (!dayPlan) return;
+        ["outfit1","outfit2"].forEach((slot) => {
+          if (dayPlan[slot]) (dayPlan[slot].items || []).forEach((id) => usedIds.add(id));
+        });
+      });
+
+      const results = await Promise.all(
+        BATCH2.map((day) => planDay(day, lastOccasions, styleProfile, usedIds))
+      );
+
+      BATCH2.forEach((day, i) => {
+        lastGeneratedPlan[day] = results[i];
+      });
+
+      renderWeek(lastGeneratedPlan, lastOccasions, true);
+
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't plan Thu-Sun — try again.");
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "Plan the rest of the week \u2192"; }
+    }
+  }
+
+  /* ---------- RENDER ---------- */
 
   function isDayPast(day) {
     const now = new Date();
-    const todayIndex = now.getDay(); // 0=Sun, 1=Mon...
+    const todayIndex = now.getDay();
     const dayIndex = { monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6, sunday:0 };
-    return dayIndex[day] < todayIndex || (dayIndex[day] === todayIndex && now.getHours() >= 23);
+    return dayIndex[day] < todayIndex;
   }
 
-  function renderWeek(plan, occasions) {
+  function renderWeek(plan, occasions, batch2Complete) {
     weekResult.style.display = "block";
     weekResult.innerHTML = "";
 
-    DAYS.forEach((day) => {
-      const dayPlan = plan[day];
-      const past = isDayPast(day);
-      const card = document.createElement("div");
+    // Render batch 1
+    BATCH1.forEach((day) => renderDayCard(day, plan[day], occasions, weekResult));
 
-      if (!dayPlan) {
-        card.className = "day-card empty" + (past ? " past" : "");
-        card.innerHTML =
-          '<div class="day-label">' +
-          day.charAt(0).toUpperCase() + day.slice(1) +
-          (past ? '<span class="past-tag">Done</span>' : "") +
-          "</div>" +
-          "<p>Not enough variety for this day.</p>";
-      } else {
-        card.className = "day-card" + (past ? " past" : "");
-        let innerHtml =
-          '<div class="day-label">' +
-          day.charAt(0).toUpperCase() + day.slice(1) +
-          (past ? '<span class="past-tag">Done</span>' : "") +
-          "</div>";
+    // Batch 2 section
+    const batch2Section = document.createElement("div");
 
-        // Outfit 1
-        if (dayPlan.outfit1) {
-          const items1 = (dayPlan.outfit1.items || [])
-            .map((id) => wardrobeItems.find((it) => it.id === id))
-            .filter(Boolean);
-          const occ1Label = occasions[day] && occasions[day].outfit1 ? occasions[day].outfit1 : "Outfit 1";
-          innerHtml +=
-            '<div class="outfit-slot">' +
-            '<div class="slot-label">' + occ1Label.charAt(0).toUpperCase() + occ1Label.slice(1) + "</div>" +
-            '<div class="day-thumbs">' +
-            items1.map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("") +
-            "</div>" +
-            '<p class="day-note">' + escapeHtml(dayPlan.outfit1.note || "") + "</p>" +
-            "</div>";
-        }
+    if (!batch2Complete) {
+      // Show "Plan rest of week" prompt
+      const promptCard = document.createElement("div");
+      promptCard.style.cssText = "border:1px solid var(--line);padding:28px;text-align:center;margin-top:1px;";
+      promptCard.innerHTML =
+        '<p class="tag" style="color:var(--muted);margin-bottom:16px;">Mon \u2013 Wed planned. Ready for the rest?</p>' +
+        '<button class="btn btn-solid" id="planRestBtn" style="width:100%;">Plan the rest of the week \u2192</button>';
+      batch2Section.appendChild(promptCard);
+    } else {
+      BATCH2.forEach((day) => renderDayCard(day, plan[day], occasions, batch2Section));
+    }
 
-        // Outfit 2
-        if (dayPlan.outfit2) {
-          const items2 = (dayPlan.outfit2.items || [])
-            .map((id) => wardrobeItems.find((it) => it.id === id))
-            .filter(Boolean);
-          const occ2Label = occasions[day] && occasions[day].outfit2 ? occasions[day].outfit2 : "Outfit 2";
-          innerHtml +=
-            '<div class="outfit-slot">' +
-            '<div class="slot-label">' + occ2Label.charAt(0).toUpperCase() + occ2Label.slice(1) + "</div>" +
-            '<div class="day-thumbs">' +
-            items2.map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("") +
-            "</div>" +
-            '<p class="day-note">' + escapeHtml(dayPlan.outfit2.note || "") + "</p>" +
-            "</div>";
-        }
+    weekResult.appendChild(batch2Section);
 
-        card.innerHTML = innerHtml;
-      }
-
-      weekResult.appendChild(card);
-    });
-
-    // Action row — explicit save only
+    // Action row
     const actionRow = document.createElement("div");
     actionRow.className = "action-row";
     actionRow.innerHTML =
-      '<button class="btn btn-solid" id="savePlanBtn">Save this plan &#8595;</button>' +
-      '<button class="btn" id="regenBtn">Regenerate &#8635;</button>';
+      '<button class="btn btn-solid" id="savePlanBtn">Save this plan \u2193</button>' +
+      '<button class="btn" id="regenBtn">Regenerate Mon\u2013Wed \u8635</button>';
     weekResult.appendChild(actionRow);
+
+    // Wire buttons
+    const planRestBtn = document.getElementById("planRestBtn");
+    if (planRestBtn) planRestBtn.addEventListener("click", planBatch2);
 
     document.getElementById("savePlanBtn").addEventListener("click", async () => {
       const btn = document.getElementById("savePlanBtn");
@@ -277,21 +301,53 @@
       btn.disabled = false;
       if (error) {
         btn.textContent = "Couldn't save — try again.";
-        setTimeout(() => { btn.textContent = "Save this plan \u2193"; }, 3000);
+        setTimeout(() => { btn.textContent = "Save this plan \u2193"; btn.disabled = false; }, 3000);
       } else {
         btn.textContent = "\u2713 Saved";
-        btn.classList.add("btn-lime");
-        setTimeout(() => {
-          btn.textContent = "Save this plan \u2193";
-          btn.classList.remove("btn-lime");
-          btn.disabled = false;
-        }, 3000);
+        setTimeout(() => { btn.textContent = "Save this plan \u2193"; btn.disabled = false; }, 3000);
       }
     });
 
-    document.getElementById("regenBtn").addEventListener("click", () => {
-      planBtn.click();
-    });
+    document.getElementById("regenBtn").addEventListener("click", () => planBtn.click());
+  }
+
+  function renderDayCard(day, dayPlan, occasions, container) {
+    const past = isDayPast(day);
+    const card = document.createElement("div");
+
+    if (!dayPlan) {
+      card.className = "day-card empty" + (past ? " past" : "");
+      card.innerHTML =
+        '<div class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) +
+        (past ? '<span class="past-tag">Done</span>' : "") + "</div>" +
+        "<p>Couldn't plan this day — not enough variety.</p>";
+    } else {
+      card.className = "day-card" + (past ? " past" : "");
+      let html =
+        '<div class="day-label">' + day.charAt(0).toUpperCase() + day.slice(1) +
+        (past ? '<span class="past-tag">Done</span>' : "") + "</div>";
+
+      ["outfit1","outfit2"].forEach((slot) => {
+        if (!dayPlan[slot]) return;
+        const items = (dayPlan[slot].items || [])
+          .map((id) => wardrobeItems.find((it) => it.id === id))
+          .filter(Boolean);
+        if (!items.length) return;
+        const occ = occasions[day] && occasions[day][slot] ? occasions[day][slot] : slot;
+        html +=
+          '<div class="outfit-slot">' +
+          '<div class="slot-label">' + occ.charAt(0).toUpperCase() + occ.slice(1) + "</div>" +
+          '<div class="day-thumbs">' +
+          items.map((it) => '<img src="' + it.image_url + '" alt="" class="day-thumb">').join("") +
+          "</div>" +
+          '<p class="day-note">' + escapeHtml(dayPlan[slot].note || "") + "</p>" +
+          "</div>";
+      });
+
+      card.innerHTML = html;
+    }
+
+    container.appendChild(card);
   }
 
   function escapeHtml(str) {

@@ -52,13 +52,16 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch (e) { return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body" }) }; }
 
-  const { wardrobe, occasions, styleProfile } = body;
+  const { wardrobe, occasions, styleProfile, usedItemIds } = body;
+  const usedSet = new Set(usedItemIds || []);
+  const availableWardrobe = wardrobe.filter((it) => !usedSet.has(it.id));
+  const wardrobeToUse = availableWardrobe.length >= 2 ? availableWardrobe : wardrobe;
   if (!wardrobe || !wardrobe.length) {
     return { statusCode: 400, body: JSON.stringify({ error: "No wardrobe items" }) };
   }
 
   // Send minimal wardrobe data to reduce payload and response size
-  const wardrobeText = wardrobe
+  const wardrobeText = wardrobeToUse
     .map((it) => `${it.id}:${it.category}${it.subcategory ? "/" + it.subcategory : ""}:${it.color}`)
     .join("\n");
 
