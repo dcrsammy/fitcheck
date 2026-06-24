@@ -151,30 +151,29 @@
 
     try {
       const styleProfile = await getStyleProfile();
-
-      const occasions1 = {};
-      const occasions2 = {};
-      ["monday","tuesday","wednesday","thursday"].forEach((d) => { occasions1[d] = occasions[d]; });
-      ["friday","saturday","sunday"].forEach((d) => { occasions2[d] = occasions[d]; });
-
       const wardrobePayload = wardrobeItems.map((it) => ({
-        id: it.id, category: it.category, subcategory: it.subcategory,
-        color: it.color, tags: it.tags, description: it.ai_description,
+        id: it.id, category: it.category, subcategory: it.subcategory, color: it.color,
       }));
 
-      const [res1, res2] = await Promise.all([
-        fetch("/.netlify/functions/plan-week", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wardrobe: wardrobePayload, occasions: occasions1, styleProfile }),
-        }),
-        fetch("/.netlify/functions/plan-week", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wardrobe: wardrobePayload, occasions: occasions2, styleProfile }),
-        }),
-      ]);
+      // One call per day in parallel — each stays well under 10s limit
+      const dayResults = await Promise.all(
+        DAYS.map((day) =>
+          fetch("/.netlify/functions/plan-week", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              wardrobe: wardrobePayload,
+              occasions: { [day]: occasions[day] },
+              styleProfile,
+            }),
+          }).then((r) => r.ok ? r.json() : null)
+        )
+      );
 
+      const plan = {};
+      DAYS.forEach((day, i) => { plan[day] = dayResults[i]; });
+      lastGeneratedPlan = plan;
+      renderWeek(plan, occasions);
       if (!res1.ok || !res2.ok) throw new Error("Planning failed");
       const [plan1, plan2] = await Promise.all([res1.json(), res2.json()]);
       const plan = Object.assign({}, plan1, plan2);
