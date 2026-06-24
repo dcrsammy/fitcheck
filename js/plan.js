@@ -174,11 +174,6 @@
       DAYS.forEach((day, i) => { plan[day] = dayResults[i]; });
       lastGeneratedPlan = plan;
       renderWeek(plan, occasions);
-      if (!res1.ok || !res2.ok) throw new Error("Planning failed");
-      const [plan1, plan2] = await Promise.all([res1.json(), res2.json()]);
-      const plan = Object.assign({}, plan1, plan2);
-      lastGeneratedPlan = plan;
-      renderWeek(plan, occasions);
 
     } catch (err) {
       console.error(err);
