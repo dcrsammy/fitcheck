@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan My Week — FitCheck</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.occasions-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:28px;}
+.occasion-tile{background:var(--bg);padding:18px 16px;}
+.occasion-tile label{font-family:'Space Mono',monospace;text-transform:uppercase;font-size:0.72rem;letter-spacing:0.05em;color:var(--lime);display:block;margin-bottom:8px;}
+.occasion-tile select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--paper);padding:8px 10px;font-family:'Space Grotesk',sans-serif;font-size:0.85rem;border-radius:2px;}
+.occasion-tile select:focus{outline:none;border-color:var(--accent);}
+.week-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);border:1px solid var(--line);}
+.day-card{background:var(--bg);padding:24px;}
+.day-card .day-label{font-family:'Space Mono',monospace;text-transform:uppercase;font-size:0.78rem;letter-spacing:0.06em;color:var(--lime);margin-bottom:12px;display:block;}
+.day-card .day-note{color:var(--muted);font-size:0.88rem;margin-top:10px;}
+.day-card .day-thumbs{display:flex;gap:8px;flex-wrap:wrap;}
+.day-thumb{width:72px;height:72px;object-fit:cover;border:1px solid var(--line);}
+.day-card.empty .day-label{color:var(--muted);}
+.day-card.empty p{color:var(--line);font-size:0.85rem;}
+.lock-panel{border:1px solid var(--line);padding:48px 28px;text-align:center;}
+.lock-panel .big-mark{font-size:2.2rem;margin-bottom:14px;}
+.lock-panel h3{margin:0 0 10px;}
+.lock-panel p{color:var(--muted);margin:0 0 24px;}
+</style>
+</head>
+<body>
+<div class="site-grain"></div>
+
+<nav class="nav">
+  <a href="index.html" class="wordmark">FIT<span>CHECK</span></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html">Home</a>
+    <a href="style.html">Style My Fit</a>
+    <a href="wardrobe.html" class="active">My Closet</a>
+    <a href="book.html">Book Olawale</a>
+    <a href="book.html" class="nav-cta">Book a session</a>
+  </div>
+</nav>
+
+<header class="hero" style="padding:48px 0 32px;">
+  <div class="wrap">
+    <a href="wardrobe.html" class="tag" style="color:var(--muted);display:inline-block;margin-bottom:12px;">&#8592; Back to closet</a>
+    <span class="tag" style="color:var(--lime);display:block;">// plan my week</span>
+    <h1 class="display" style="font-size:clamp(2rem,5vw,3.2rem);">What's the <span class="accent">plan?</span></h1>
+    <p class="lede">Pick your occasions and we'll build a full week of outfits from your closet.</p>
+  </div>
+</header>
+
+<section class="wrap" style="padding-top:16px;">
+
+  <div id="lockPanel" style="display:none;" class="lock-panel">
+    <div class="big-mark">&#128274;</div>
+    <h3>Plan My Week is a Closet plan feature</h3>
+    <p>Upgrade to get AI-planned outfits built from your own wardrobe — automatically, for the whole week.</p>
+    <a href="pricing.html" class="btn btn-lime">See pricing &#8594;</a>
+  </div>
+
+  <div id="planApp" style="display:none;">
+
+    <div class="occasions-grid">
+      <div class="occasion-tile">
+        <label>Monday</label>
+        <select id="occ-monday">
+          <option value="work">Work</option>
+          <option value="casual" selected>Casual</option>
+          <option value="evening">Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+      <div class="occasion-tile">
+        <label>Tuesday</label>
+        <select id="occ-tuesday">
+          <option value="work">Work</option>
+          <option value="casual" selected>Casual</option>
+          <option value="evening">Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+      <div class="occasion-tile">
+        <label>Wednesday</label>
+        <select id="occ-wednesday">
+          <option value="work" selected>Work</option>
+          <option value="casual">Casual</option>
+          <option value="evening">Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+      <div class="occasion-tile">
+        <label>Thursday</label>
+        <select id="occ-thursday">
+          <option value="work" selected>Work</option>
+          <option value="casual">Casual</option>
+          <option value="evening">Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+      <div class="occasion-tile">
+        <label>Friday</label>
+        <select id="occ-friday">
+          <option value="work">Work</option>
+          <option value="casual">Casual</option>
+          <option value="evening" selected>Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+      <div class="occasion-tile">
+        <label>Saturday</label>
+        <select id="occ-saturday">
+          <option value="work">Work</option>
+          <option value="casual" selected>Casual</option>
+          <option value="evening">Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+      <div class="occasion-tile">
+        <label>Sunday</label>
+        <select id="occ-sunday">
+          <option value="work">Work</option>
+          <option value="casual" selected>Casual</option>
+          <option value="evening">Evening out</option>
+          <option value="gym">Gym</option>
+          <option value="surprise">Surprise me</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-solid" id="planBtn" style="width:100%;margin-bottom:32px;">
+      Plan my week &#8594;
+    </button>
+
+    <div id="loadingState" style="display:none;">
+      <div class="loading-row" style="justify-content:center;padding:32px 0;">
+        <div class="spinner"></div>
+        <span>Building your week...</span>
+      </div>
+    </div>
+
+    <div id="weekResult" style="display:none;" class="week-grid"></div>
+
+  </div>
+
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span class="tag">FitCheck &#8212; Lagos</span>
+    <span class="tag">Styled by Olawale Akomolafe</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/config.js"></script>
+<script src="js/plan.js"></script>
+</body>
+</html>
