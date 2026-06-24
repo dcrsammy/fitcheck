@@ -57,19 +57,20 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "No wardrobe items" }) };
   }
 
+  // Send minimal wardrobe data to reduce payload and response size
   const wardrobeText = wardrobe
-    .map((it) => `ID: ${it.id} | ${it.category}${it.subcategory ? "/" + it.subcategory : ""} | ${it.color} | ${it.description || ""} | tags: ${(it.tags || []).join(", ")}`)
+    .map((it) => `${it.id}:${it.category}${it.subcategory ? "/" + it.subcategory : ""}:${it.color}`)
     .join("\n");
 
   const occasionsText = Object.entries(occasions || {})
-    .map(([day, occ]) => `${day}: outfit1=${occ.outfit1 || "casual"}${occ.outfit2 ? ", outfit2=" + occ.outfit2 : ", outfit2=none"}`)
-    .join("\n");
+    .map(([day, occ]) => `${day}:${occ.outfit1||"casual"}/${occ.outfit2||"none"}`)
+    .join(",");
 
   const profileLine = styleProfile
     ? `User style profile: gender=${styleProfile.gender || "unspecified"}, vibes=${(styleProfile.vibes || []).join(", ")}, dresses for=${(styleProfile.dress_occasions || []).join(", ")}. Style all outfits accordingly.\n\n`
     : "";
 
-  const userMessage = `${profileLine}Wardrobe:\n${wardrobeText}\n\nOccasions per day:\n${occasionsText}\n\nPlan week. 2 outfits per day max. Use exact IDs. Notes max 12 words each. Raw JSON only, no backticks.`;
+  const userMessage = `${profileLine}Wardrobe (id:category:color):\n${wardrobeText}\n\nOccasions (day:outfit1/outfit2): ${occasionsText}\n\nPlan 2 outfits per day. Use exact IDs from wardrobe. Notes under 10 words. Raw JSON only.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
